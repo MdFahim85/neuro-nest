@@ -29,20 +29,20 @@ export async function authMiddleware(
   }
 }
 
-// export function authorizeRoles(...allowedRoles: UserRole[]) {
-//   return (req: Request, res: Response, next: NextFunction) => {
-//     const user = req.user;
+export function authorizeRoles(...allowedRoles: UserRole[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
 
-//     if (!user) {
-//       return res.status(401).json({ message: "User not authenticated" });
-//     }
+    if (!user) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
-//     if (!allowedRoles.includes(user.role as UserRole)) {
-//       return res
-//         .status(403)
-//         .json({ message: "You are not authorized to access this resource" });
-//     }
+    if (!allowedRoles.includes(user.role as UserRole)) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to access this resource" });
+    }
 
-//     next();
-//   };
-// }
+    next();
+  };
+}

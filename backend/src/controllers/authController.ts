@@ -3,36 +3,40 @@ import prisma from "../config/prisma";
 import { supabase } from "../config/supabaseClient";
 
 export const signUp = async (req: Request, res: Response) => {
-  const { email, password, username, displayname } = req.body;
+  try {
+    const { email, password, username, displayname } = req.body;
 
-  const existingUser = await prisma.user.findUnique({
-    where: { username: username },
-    select: { email: true },
-  });
-
-  if (existingUser)
-    return res.status(409).json({ error: "Username already exists" });
-
-  const { data: supabaseUser, error: supabaseError } =
-    await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
+    const existingUser = await prisma.user.findUnique({
+      where: { username: username },
+      select: { email: true },
     });
 
-  if (supabaseError)
-    return res.status(400).json({ error: supabaseError.message });
+    if (existingUser)
+      return res.status(409).json({ error: "Username already exists" });
 
-  const user = await prisma.user.create({
-    data: {
-      id: supabaseUser.user.id,
-      email: supabaseUser.user.email as string,
-      username,
-      displayname,
-    },
-  });
+    const { data: supabaseUser, error: supabaseError } =
+      await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
 
-  res.json({ user });
+    if (supabaseError)
+      return res.status(400).json({ error: supabaseError.message });
+
+    const user = await prisma.user.create({
+      data: {
+        id: supabaseUser.user.id,
+        email: supabaseUser.user.email as string,
+        username,
+        displayname,
+      },
+    });
+
+    return res.json({ user });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const signIn = async (req: Request, res: Response) => {
