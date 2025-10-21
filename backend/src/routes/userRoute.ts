@@ -6,6 +6,8 @@ import {
   getMyDetails,
   getSavedPosts,
   getUserDetails,
+  getUserFollowers,
+  getUserFollowings,
   getUserPosts,
   unfollowUser,
   updateMyDetails,
@@ -57,5 +59,8 @@ router
     authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
     unfollowUser
   );
+
+router.route("/:userId/followings").get(getUserFollowings);
+router.route("/:userId/followers").get(getUserFollowers);
 
 module.exports = router;

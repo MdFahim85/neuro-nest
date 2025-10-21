@@ -207,3 +207,80 @@ export const unfollowUser = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Get user followers
+
+export const getUserFollowers = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.userId;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const followers = await prisma.follow.findMany({
+      where: { followingid: id },
+      select: {
+        User_Follow_followeridToUser: {
+          select: {
+            id: true,
+            username: true,
+            displayname: true,
+            profilepicture: true,
+            bannerimage: true,
+            bio: true,
+            _count: {
+              select: {
+                Follow_Follow_followeridToUser: true,
+                Follow_Follow_followingidToUser: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!followers || !followers.length) {
+      return res.status(404).json({ error: "No followers found" });
+    }
+    return res.status(200).json({ message: "Followers found", followers });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get user followings
+export const getUserFollowings = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.userId;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const followings = await prisma.follow.findMany({
+      where: { followerid: id },
+      select: {
+        User_Follow_followingidToUser: {
+          select: {
+            id: true,
+            username: true,
+            displayname: true,
+            profilepicture: true,
+            bannerimage: true,
+            bio: true,
+            _count: {
+              select: {
+                Follow_Follow_followeridToUser: true,
+                Follow_Follow_followingidToUser: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!followings || !followings.length) {
+      return res.status(404).json({ error: "No followings found" });
+    }
+    return res.status(200).json({ message: "Followings found", followings });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
