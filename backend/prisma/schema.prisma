@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Achievement {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  description     String
+  iconurl         String
+  xpreward        Int
+  achievementtype AchievementType
+  UserAchievement UserAchievement[]
+}
+
+model AdminAction {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminid         String          @db.Uuid
+  actiontype      AdminActionType
+  targetuserid    String?         @db.Uuid
+  targetpostid    String?         @db.Uuid
+  targetsubcommid String?         @db.Uuid
+  reason          String?
+  metadata        Json?
+  createdat       DateTime?       @default(now()) @db.Timestamp(6)
+  User            User            @relation(fields: [adminid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_admin")
+}
+
+model Badge {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String      @unique
+  description String
+  requiredxp  Int
+  iconurl     String
+  tierlevel   Int
+  createdat   DateTime?   @default(now()) @db.Timestamp(6)
+  UserBadge   UserBadge[]
+}
+
+model Comment {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postid        String    @db.Uuid
+  authorid      String    @db.Uuid
+  parentid      String?   @db.Uuid
+  content       String
+  upvotecount   Int?      @default(0)
+  downvotecount Int?      @default(0)
+  isdeleted     Boolean?  @default(false)
+  createdat     DateTime? @default(now()) @db.Timestamp(6)
+  updatedat     DateTime? @default(now()) @db.Timestamp(6)
+  Comment       Comment?  @relation("CommentToComment", fields: [parentid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_parent")
+  other_Comment Comment[] @relation("CommentToComment")
+  Post          Post      @relation(fields: [postid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_post")
+  User          User      @relation(fields: [authorid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_user")
+  Vote          Vote[]
+}
+
+model Conversation {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  isgroupchat             Boolean?                  @default(false)
+  name                    String?
+  createdat               DateTime?                 @default(now()) @db.Timestamp(6)
+  updatedat               DateTime?                 @default(now()) @db.Timestamp(6)
+  ConversationParticipant ConversationParticipant[]
+  Message                 Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationid String       @db.Uuid
+  userid         String       @db.Uuid
+  joinedat       DateTime?    @default(now()) @db.Timestamp(6)
+  lastreadat     DateTime?    @default(now()) @db.Timestamp(6)
+  Conversation   Conversation @relation(fields: [conversationid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_part_convo")
+  User           User         @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_part_user")
+
+  @@unique([conversationid, userid])
+}
+
+model Course {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicname         String
+  description       String?
+  aigeneratedpath   Json
+  difficultylevel   DifficultyLevel
+  estimatedduration Int
+  xpreward          Int
+  createdat         DateTime?          @default(now()) @db.Timestamp(6)
+  updatedat         DateTime?          @default(now()) @db.Timestamp(6)
+  CourseEnrollment  CourseEnrollment[]
+  CourseResource    CourseResource[]
+  CourseTier        CourseTier[]
+}
+
+model CourseEnrollment {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid         String           @db.Uuid
+  courseid       String           @db.Uuid
+  currenttier    DifficultyLevel? @default(BEGINNER)
+  progress       Float?           @default(0)
+  iscompleted    Boolean?         @default(false)
+  startedat      DateTime?        @default(now()) @db.Timestamp(6)
+  completedat    DateTime?        @db.Timestamp(6)
+  lastaccessedat DateTime?        @default(now()) @db.Timestamp(6)
+  totaltimespent Int?             @default(0)
+  Course         Course           @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_course")
+  User           User             @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
+  TierProgress   TierProgress[]
+
+  @@unique([userid, courseid])
+}
+
+model CourseResource {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courseid     String       @db.Uuid
+  resourcetype ResourceType
+  title        String
+  url          String
+  category     String
+  orderindex   Int
+  createdat    DateTime?    @default(now()) @db.Timestamp(6)
+  Course       Course       @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_resource_course")
+}
+
+model CourseTier {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courseid         String          @db.Uuid
+  tierlevel        DifficultyLevel
+  content          Json
+  minimumtimehours Int
+  xpreward         Int
+  orderindex       Int
+  Course           Course          @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_coursetier")
+  TierProgress     TierProgress[]
+
+  @@unique([courseid, tierlevel])
+}
+
+model Follow {
+  id                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  followerid                    String    @db.Uuid
+  followingid                   String    @db.Uuid
+  createdat                     DateTime? @default(now()) @db.Timestamp(6)
+  User_Follow_followeridToUser  User      @relation("Follow_followeridToUser", fields: [followerid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_follower")
+  User_Follow_followingidToUser User      @relation("Follow_followingidToUser", fields: [followingid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_following")
+
+  @@unique([followerid, followingid])
+}
+
+model JoinRequest {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid         String         @db.Uuid
+  subcommunityid String         @db.Uuid
+  status         RequestStatus? @default(PENDING)
+  requestedat    DateTime?      @default(now()) @db.Timestamp(6)
+  resolvedat     DateTime?      @db.Timestamp(6)
+  resolvedby     String?        @db.Uuid
+  SubCommunity   SubCommunity   @relation(fields: [subcommunityid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_join_comm")
+
+  @@unique([userid, subcommunityid])
+}
+
+model Message {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationid String       @db.Uuid
+  senderid       String       @db.Uuid
+  content        String
+  isread         Boolean?     @default(false)
+  createdat      DateTime?    @default(now()) @db.Timestamp(6)
+  Conversation   Conversation @relation(fields: [conversationid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_msg_convo")
+  User           User         @relation(fields: [senderid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_msg_sender")
+}
+
+model Moderator {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid           String       @db.Uuid
+  subcommunityid   String       @db.Uuid
+  issupermoderator Boolean?     @default(false)
+  appointedat      DateTime?    @default(now()) @db.Timestamp(6)
+  SubCommunity     SubCommunity @relation(fields: [subcommunityid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_moderator_comm")
+  User             User         @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_moderator_user")
+
+  @@unique([userid, subcommunityid])
+}
+
+model Notification {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid            String           @db.Uuid
+  type              NotificationType
+  content           String
+  relatedentityid   String?
+  relatedentitytype String?
+  isread            Boolean?         @default(false)
+  createdat         DateTime?        @default(now()) @db.Timestamp(6)
+  User              User             @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_notif_user")
+
+  @@index([type, isread], map: "idx_notification_type_read")
+  @@index([userid, isread], map: "idx_notification_user_read")
+}
+
+model Post {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorid         String        @db.Uuid
+  subcommunityid   String?       @db.Uuid
+  title            String
+  content          String
+  mediaurls        String[]
+  hashtags         String[]
+  upvotecount      Int?          @default(0)
+  downvotecount    Int?          @default(0)
+  commentcount     Int?          @default(0)
+  isdeleted        Boolean?      @default(false)
+  requiresapproval Boolean?      @default(false)
+  isapproved       Boolean?      @default(false)
+  createdat        DateTime?     @default(now()) @db.Timestamp(6)
+  updatedat        DateTime?     @default(now()) @db.Timestamp(6)
+  Comment          Comment[]
+  SubCommunity     SubCommunity? @relation(fields: [subcommunityid], references: [id], onUpdate: NoAction, map: "fk_post_comm")
+  User             User          @relation(fields: [authorid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_user")
+  SavedPost        SavedPost[]
+  Vote             Vote[]
+
+  @@index([authorid, createdat], map: "idx_post_author_createdat")
+  @@index([hashtags], map: "idx_post_hashtags")
+  @@index([subcommunityid, createdat], map: "idx_post_subcomm_createdat")
+}
+
+model SavedPost {
+  id      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid  String    @db.Uuid
+  postid  String    @db.Uuid
+  savedat DateTime? @default(now()) @db.Timestamp(6)
+  Post    Post      @relation(fields: [postid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_saved_post")
+  User    User      @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_saved_user")
+
+  @@unique([userid, postid])
+}
+
+model SubCommunity {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @unique
+  slug        String        @unique
+  description String
+  rules       String?
+  creatorid   String        @db.Uuid
+  isprivate   Boolean?      @default(false)
+  membercount Int?          @default(1)
+  postcount   Int?          @default(0)
+  createdat   DateTime?     @default(now()) @db.Timestamp(6)
+  updatedat   DateTime?     @default(now()) @db.Timestamp(6)
+  isdeleted   Boolean?      @default(false)
+  JoinRequest JoinRequest[]
+  Moderator   Moderator[]
+  Post        Post[]
+  User        User          @relation(fields: [creatorid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_creator")
+}
+
+model TierProgress {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  enrollmentid     String           @db.Uuid
+  tierid           String           @db.Uuid
+  iscompleted      Boolean?         @default(false)
+  startedat        DateTime?        @default(now()) @db.Timestamp(6)
+  completedat      DateTime?        @db.Timestamp(6)
+  timespent        Int?             @default(0)
+  CourseEnrollment CourseEnrollment @relation(fields: [enrollmentid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_enrollment")
+  CourseTier       CourseTier       @relation(fields: [tierid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tier")
+
+  @@unique([enrollmentid, tierid])
+}
+
+model User {
+  id                              String                    @id @default(dbgenerated("auth.uid()")) @db.Uuid
+  email                           String                    @unique
+  username                        String                    @unique
+  displayname                     String
+  dateofbirth                     DateTime?                 @db.Timestamp(6)
+  bio                             String?
+  profilepicture                  String?
+  bannerimage                     String?
+  role                            UserRole?                 @default(REGULAR_USER)
+  xppoints                        Int?                      @default(0)
+  warningcount                    Int?                      @default(0)
+  isbanned                        Boolean?                  @default(false)
+  isdeleted                       Boolean?                  @default(false)
+  createdat                       DateTime?                 @default(now()) @db.Timestamp(6)
+  updatedat                       DateTime?                 @default(now()) @db.Timestamp(6)
+  AdminAction                     AdminAction[]
+  Comment                         Comment[]
+  ConversationParticipant         ConversationParticipant[]
+  CourseEnrollment                CourseEnrollment[]
+  Follow_Follow_followeridToUser  Follow[]                  @relation("Follow_followeridToUser")
+  Follow_Follow_followingidToUser Follow[]                  @relation("Follow_followingidToUser")
+  Message                         Message[]
+  Moderator                       Moderator[]
+  Notification                    Notification[]
+  Post                            Post[]
+  SavedPost                       SavedPost[]
+  SubCommunity                    SubCommunity[]
+  UserAchievement                 UserAchievement[]
+  UserBadge                       UserBadge[]
+  Vote                            Vote[]
+
+  @@index([createdat], map: "idx_user_createdat")
+  @@index([email], map: "idx_user_email")
+  @@index([username], map: "idx_user_username")
+  @@index([xppoints], map: "idx_user_xppoints")
+}
+
+model UserAchievement {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid        String      @db.Uuid
+  achievementid String      @db.Uuid
+  courseid      String?     @db.Uuid
+  earnedat      DateTime?   @default(now()) @db.Timestamp(6)
+  isshared      Boolean?    @default(false)
+  Achievement   Achievement @relation(fields: [achievementid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_userach_ach")
+  User          User        @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_userach_user")
+
+  @@unique([userid, achievementid, courseid])
+}
+
+model UserBadge {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid   String    @db.Uuid
+  badgeid  String    @db.Uuid
+  earnedat DateTime? @default(now()) @db.Timestamp(6)
+  Badge    Badge     @relation(fields: [badgeid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_userbadge_badge")
+  User     User      @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_userbadge_user")
+
+  @@unique([userid, badgeid])
+}
+
+model Vote {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid    String    @db.Uuid
+  postid    String?   @db.Uuid
+  commentid String?   @db.Uuid
+  votetype  VoteType
+  createdat DateTime? @default(now()) @db.Timestamp(6)
+  Comment   Comment?  @relation(fields: [commentid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vote_comment")
+  Post      Post?     @relation(fields: [postid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vote_post")
+  User      User      @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vote_user")
+
+  @@unique([userid, commentid])
+  @@unique([userid, postid])
+}
+
+enum AchievementType {
+  COURSE_COMPLETION
+  MILESTONE
+  SPECIAL_EVENT
+}
+
+enum AdminActionType {
+  USER_DELETED
+  USER_BANNED
+  USER_WARNED
+  POST_DELETED
+  SUBCOMMUNITY_DELETED
+  USER_PROMOTED
+  USER_DEMOTED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum NotificationType {
+  UPVOTE
+  DOWNVOTE
+  COMMENT
+  REPLY
+  MENTION
+  FOLLOW
+  POST_APPROVED
+  POST_DELETED
+  WARNING
+  ACHIEVEMENT
+  MESSAGE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ResourceType {
+  VIDEO
+  ARTICLE
+  DOCUMENTATION
+  TUTORIAL
+}
+
+enum UserRole {
+  REGULAR_USER
+  STUDENT
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
