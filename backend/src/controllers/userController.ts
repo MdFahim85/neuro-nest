@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../config/prisma";
 import { supabase } from "../config/supabaseClient";
+import { error } from "console";
 
 // Get personal details
 export const getMyDetails = async (req: Request, res: Response) => {
@@ -94,11 +95,11 @@ export const getUserPosts = async (req: Request, res: Response) => {
     const id = req.params.userId;
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
     const posts = await prisma.post.findMany({ where: { authorid: user.id } });
     if (!posts || !posts.length) {
-      return res.status(404).json({ message: "Posts not found" });
+      return res.status(404).json({ error: "Posts not found" });
     }
     return res.status(200).json({ message: "User posts found", posts });
   } catch (error) {
@@ -106,6 +107,7 @@ export const getUserPosts = async (req: Request, res: Response) => {
   }
 };
 
+// Get saved posts (#pagination required)
 export const getSavedPosts = async (req: Request, res: Response) => {
   try {
     const user = req.user;
@@ -114,11 +116,93 @@ export const getSavedPosts = async (req: Request, res: Response) => {
       select: { SavedPost: true },
     });
     if (!userSavedPosts || !userSavedPosts.SavedPost.length) {
-      return res.status(404).json({ message: "No saved post found" });
+      return res.status(404).json({ error: "No saved post found" });
     }
     return res
       .status(200)
       .json({ message: "Saved posts found", userSavedPosts });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Follow user
+export const followUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.userId;
+    const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const followUser = await prisma.user.findUnique({ where: { id } });
+    if (!followUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (currentUser?.id === followUser.id) {
+      return res.status(403).json({ error: "You cannot follow yourself" });
+    }
+
+    const following = await prisma.$transaction(async (tx) => {
+      const newFollow = await tx.follow.create({
+        data: {
+          followerid: currentUser.id,
+          followingid: followUser.id,
+        },
+      });
+      const notification = await tx.notification.create({
+        data: {
+          userid: followUser.id,
+          type: "FOLLOW",
+          content: `${currentUser.displayname} has started following you`,
+        },
+      });
+      return { newFollow, notification };
+    });
+    return res
+      .status(200)
+      .json({ message: "User followed successfully", data: following });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Unfollow user
+export const unfollowUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.userId;
+    const currentUser = req.user;
+    const unfollowingUser = await prisma.user.findUnique({ where: { id } });
+    if (!currentUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (!unfollowingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const following = await prisma.follow.findUnique({
+      where: {
+        followerid_followingid: {
+          followerid: currentUser.id,
+          followingid: unfollowingUser.id,
+        },
+      },
+    });
+    if (!following) {
+      return res.status(404).json({ error: "You are not following this user" });
+    }
+
+    const unfollowed = await prisma.follow.delete({
+      where: {
+        followerid_followingid: {
+          followerid: currentUser.id,
+          followingid: unfollowingUser.id,
+        },
+      },
+    });
+    return res
+      .status(200)
+      .json({ message: "User unfollowed successfully", unfollowed });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }

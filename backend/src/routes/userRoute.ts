@@ -2,10 +2,12 @@ import express from "express";
 const router = express.Router();
 import {
   changeUserPassword,
+  followUser,
   getMyDetails,
   getSavedPosts,
   getUserDetails,
   getUserPosts,
+  unfollowUser,
   updateMyDetails,
 } from "../controllers/userController";
 import { authMiddleware, authorizeRoles } from "../middlewares/auth";
@@ -42,7 +44,18 @@ router
 
 // User routes
 router.route("/:userId").get(getUserDetails);
-
 router.route("/:userId/posts").get(getUserPosts);
+router
+  .route("/:userId/follow")
+  .post(
+    authMiddleware,
+    authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
+    followUser
+  )
+  .delete(
+    authMiddleware,
+    authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
+    unfollowUser
+  );
 
 module.exports = router;
