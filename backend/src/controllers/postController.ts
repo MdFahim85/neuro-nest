@@ -319,3 +319,53 @@ export const savePostToggle = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Search posts
+export const searchPosts = async (req: Request, res: Response) => {
+  try {
+    const title = req.query.title as string;
+    const hashTags = req.query.hashTags as string;
+
+    if (
+      (!title || title.trim() === "") &&
+      (!hashTags || hashTags.trim() === "")
+    ) {
+      return res
+        .status(400)
+        .json({
+          error: "At least one query parameter (title or hashTags) is required",
+        });
+    }
+
+    const filters: any = [];
+
+    if (title && title.trim() !== "") {
+      filters.push({
+        title: { contains: title, mode: "insensitive" },
+      });
+    }
+
+    if (hashTags && hashTags.trim() !== "") {
+      filters.push({
+        hashtags: { hasSome: hashTags.split(",").map((tag) => tag.trim()) },
+      });
+    }
+
+    const posts = await prisma.post.findMany({
+      where: {
+        OR: filters,
+      },
+    });
+
+    if (!posts || !posts.length) {
+      return res.status(404).json({ error: "No posts found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: `${posts.length} posts found`, posts });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

@@ -5,6 +5,7 @@ import {
   getAllPosts,
   getSinglePost,
   savePostToggle,
+  searchPosts,
   updatePost,
   voteToggle,
 } from "../controllers/postController";
@@ -20,6 +21,9 @@ router
     authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
     createPost
   );
+
+router.route("/search").get(searchPosts);
+
 router
   .route("/:postId")
   .get(getSinglePost)
