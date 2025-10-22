@@ -4,7 +4,9 @@ import {
   deletePost,
   getAllPosts,
   getSinglePost,
+  savePostToggle,
   updatePost,
+  voteToggle,
 } from "../controllers/postController";
 import { authMiddleware, authorizeRoles } from "../middlewares/auth";
 
@@ -42,6 +44,22 @@ router
       "SUPER_ADMIN"
     ),
     deletePost
+  );
+
+router
+  .route("/:postId/vote")
+  .post(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    voteToggle
+  );
+
+router
+  .route("/:postId/save")
+  .post(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    savePostToggle
   );
 
 module.exports = router;

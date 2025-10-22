@@ -111,11 +111,24 @@ export const getUserPosts = async (req: Request, res: Response) => {
 export const getSavedPosts = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    const userSavedPosts = await prisma.user.findUnique({
-      where: { id: user?.id },
-      select: { SavedPost: true },
+    const userSavedPosts = await prisma.savedPost.findMany({
+      where: { userid: user?.id },
+      include: {
+        Post: {
+          select: {
+            title: true,
+            content: true,
+            mediaurls: true,
+            hashtags: true,
+            subcommunityid: true,
+            createdat: true,
+            updatedat: true,
+          },
+        },
+      },
     });
-    if (!userSavedPosts || !userSavedPosts.SavedPost.length) {
+
+    if (!userSavedPosts) {
       return res.status(404).json({ error: "No saved post found" });
     }
     return res
