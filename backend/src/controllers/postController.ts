@@ -521,3 +521,166 @@ export const deleteComment = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Vote toggle on comment
+export const voteToggleComment = async (req: Request, res: Response) => {
+  try {
+    const voteType = req.body.voteType as "UPVOTE" | "DOWNVOTE";
+    const { postId, commentId } = req.params;
+    const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    const vote = await prisma.$transaction(async (tx) => {
+      const existingVote = await tx.vote.findFirst({
+        where: {
+          postid: postId,
+          commentid: commentId,
+          userid: currentUser?.id,
+        },
+      });
+
+      const comment = await tx.comment.findUnique({
+        where: { id: commentId },
+        select: {
+          id: true,
+          authorid: true,
+          upvotecount: true,
+          downvotecount: true,
+        },
+      });
+
+      let message = "";
+      let updatedVote = null;
+      let newVote = null;
+
+      // --- CASE 1: Remove existing same-type vote (toggle off)
+      if (existingVote && existingVote.votetype === voteType) {
+        await tx.vote.delete({ where: { id: existingVote.id } });
+
+        const updateField =
+          voteType === "UPVOTE"
+            ? { upvotecount: { decrement: 1 } }
+            : { downvotecount: { decrement: 1 } };
+
+        const updatedComment = await tx.comment.update({
+          where: { id: commentId },
+          data: updateField,
+          select: { id: true, upvotecount: true, downvotecount: true },
+        });
+
+        message = "Vote removed";
+
+        return {
+          message,
+          comment: updatedComment,
+        };
+      }
+
+      // --- CASE 2: Switch vote type (e.g., upvote → downvote)
+      if (existingVote && existingVote.votetype !== voteType) {
+        updatedVote = await tx.vote.update({
+          where: { id: existingVote.id },
+          data: { votetype: voteType },
+        });
+
+        const data =
+          voteType === "UPVOTE"
+            ? {
+                upvotecount: { increment: 1 },
+                downvotecount: { decrement: 1 },
+              }
+            : {
+                downvotecount: { increment: 1 },
+                upvotecount: { decrement: 1 },
+              };
+
+        const updatedComment = await tx.comment.update({
+          where: { id: commentId },
+          data,
+          select: { id: true, upvotecount: true, downvotecount: true },
+        });
+
+        // Create notification (if not own comment)
+        if (comment?.authorid === currentUser?.id) {
+          await tx.notification.create({
+            data: {
+              userid: post.authorid,
+              type: `${voteType}`,
+              content: `${currentUser?.username} changed their vote on your comment to ${voteType}.`,
+              relatedentityid: comment?.id as string,
+            },
+          });
+        }
+
+        message = "Vote updated";
+
+        return {
+          message,
+          vote: updatedVote,
+          comment: updatedComment,
+        };
+      }
+
+      // --- CASE 3: New vote
+      newVote = await tx.vote.create({
+        data: {
+          postid: postId,
+          commentid: commentId,
+          userid: currentUser?.id!,
+          votetype: voteType,
+        },
+      });
+
+      const updateField =
+        voteType === "UPVOTE"
+          ? { upvotecount: { increment: 1 } }
+          : { downvotecount: { increment: 1 } };
+
+      const updatedComment = await tx.comment.update({
+        where: { id: commentId },
+        data: updateField,
+        select: { id: true, upvotecount: true, downvotecount: true },
+      });
+
+      // Create notification (if not voting on own comment)
+      if (comment?.authorid === currentUser?.id) {
+        await tx.notification.create({
+          data: {
+            userid: post.authorid,
+            type: `${voteType}`,
+            content: `${
+              currentUser?.username
+            } ${voteType.toLowerCase()}d your post.`,
+            relatedentityid: comment?.id as string,
+          },
+        });
+      }
+
+      message = "Vote added";
+
+      return {
+        message,
+        vote: newVote,
+        comment: updatedComment,
+      };
+    });
+
+    if (!vote) {
+      return res.status(500).json({ error: "Failed to process vote" });
+    }
+    return res.status(200).json(vote);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

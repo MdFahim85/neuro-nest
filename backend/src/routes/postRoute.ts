@@ -12,6 +12,7 @@ import {
   updateComment,
   updatePost,
   voteToggle,
+  voteToggleComment,
 } from "../controllers/postController";
 import { authMiddleware, authorizeRoles } from "../middlewares/auth";
 
@@ -89,6 +90,14 @@ router
       "SUPER_ADMIN"
     ),
     deleteComment
+  );
+// Comment vote toggle route
+router
+  .route("/:postId/comments/:commentId/vote")
+  .post(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    voteToggleComment
   );
 
 // Vote toggle route
