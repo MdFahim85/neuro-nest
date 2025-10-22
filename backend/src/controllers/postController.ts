@@ -330,11 +330,9 @@ export const searchPosts = async (req: Request, res: Response) => {
       (!title || title.trim() === "") &&
       (!hashTags || hashTags.trim() === "")
     ) {
-      return res
-        .status(400)
-        .json({
-          error: "At least one query parameter (title or hashTags) is required",
-        });
+      return res.status(400).json({
+        error: "At least one query parameter (title or hashTags) is required",
+      });
     }
 
     const filters: any = [];
@@ -366,6 +364,160 @@ export const searchPosts = async (req: Request, res: Response) => {
       .json({ message: `${posts.length} posts found`, posts });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get comments for a post
+export const getPostComments = async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId;
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    const comments = await prisma.comment.findMany({
+      where: { postid: postId },
+    });
+    if (!comments || !comments.length) {
+      return res.status(404).json({ error: "Comments not found" });
+    }
+    return res
+      .status(200)
+      .json({ message: `${comments.length} Comments found`, comments });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Create comment
+export const createComment = async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId;
+    const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+    const { content, parentId } = req.body;
+    if (!content || content.trim() === "") {
+      return res.status(400).json({ error: "Content is required" });
+    }
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    const result = await prisma.$transaction(async (tx) => {
+      const comment = await tx.comment.create({
+        data: {
+          content,
+          ...(parentId && { parentid: parentId }),
+          Post: { connect: { id: postId } },
+          User: { connect: { id: currentUser.id } },
+        },
+      });
+
+      if (post.authorid !== currentUser.id) {
+        await tx.notification.create({
+          data: {
+            type: "COMMENT",
+            content: `${currentUser.displayname} has commented on your post "${post.title}"`,
+            userid: post.authorid,
+            relatedentityid: postId,
+          },
+        });
+      }
+
+      return comment;
+    });
+
+    return res
+      .status(201)
+      .json({ message: "Comment created", comment: result });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Update comment
+export const updateComment = async (req: Request, res: Response) => {
+  try {
+    const { postId, commentId } = req.params;
+
+    const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: "Content is required" });
+    }
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    if (
+      comment.authorid !== currentUser.id &&
+      currentUser?.role !== "MODERATOR" &&
+      currentUser?.role !== "ADMIN" &&
+      currentUser?.role !== "SUPER_ADMIN"
+    ) {
+      return res.status(403).json({ error: "You cannot edit this comment" });
+    }
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        content,
+      },
+    });
+    if (!updatedComment) {
+      return res.status(500).json({ error: "Failed to update comment" });
+    }
+    return res.status(200).json({ message: "Comment updated", updatedComment });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Delete comment
+export const deleteComment = async (req: Request, res: Response) => {
+  try {
+    const { postId, commentId } = req.params;
+    const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    if (
+      comment.authorid !== currentUser.id &&
+      currentUser?.role !== "MODERATOR" &&
+      currentUser?.role !== "ADMIN" &&
+      currentUser?.role !== "SUPER_ADMIN"
+    ) {
+      return res.status(403).json({ error: "You cannot delete this comment" });
+    }
+    const deletedComment = await prisma.comment.delete({
+      where: { id: commentId },
+    });
+    if (!deletedComment) {
+      return res.status(500).json({ error: "Failed to delete comment" });
+    }
+    return res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
 };

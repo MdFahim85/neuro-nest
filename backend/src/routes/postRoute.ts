@@ -1,11 +1,15 @@
 import express from "express";
 import {
+  createComment,
   createPost,
+  deleteComment,
   deletePost,
   getAllPosts,
+  getPostComments,
   getSinglePost,
   savePostToggle,
   searchPosts,
+  updateComment,
   updatePost,
   voteToggle,
 } from "../controllers/postController";
@@ -13,6 +17,7 @@ import { authMiddleware, authorizeRoles } from "../middlewares/auth";
 
 const router = express.Router();
 
+// All posts routes
 router
   .route("/")
   .get(getAllPosts)
@@ -22,8 +27,10 @@ router
     createPost
   );
 
+//Search posts route
 router.route("/search").get(searchPosts);
 
+// Single post routes
 router
   .route("/:postId")
   .get(getSinglePost)
@@ -50,6 +57,41 @@ router
     deletePost
   );
 
+// Comment routes
+router
+  .route("/:postId/comments")
+  .get(getPostComments)
+  .post(
+    authMiddleware,
+    authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
+    createComment
+  );
+router
+  .route("/:postId/comments/:commentId")
+  .put(
+    authMiddleware,
+    authorizeRoles(
+      "REGULAR_USER",
+      "STUDENT",
+      "MODERATOR",
+      "ADMIN",
+      "SUPER_ADMIN"
+    ),
+    updateComment
+  )
+  .delete(
+    authMiddleware,
+    authorizeRoles(
+      "REGULAR_USER",
+      "STUDENT",
+      "MODERATOR",
+      "ADMIN",
+      "SUPER_ADMIN"
+    ),
+    deleteComment
+  );
+
+// Vote toggle route
 router
   .route("/:postId/vote")
   .post(
@@ -58,6 +100,7 @@ router
     voteToggle
   );
 
+// Save post toggle route
 router
   .route("/:postId/save")
   .post(
