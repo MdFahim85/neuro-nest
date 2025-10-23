@@ -36,12 +36,13 @@ export const createPost = async (req: Request, res: Response) => {
 export const getAllPosts = async (req: Request, res: Response) => {
   try {
     const posts = await prisma.post.findMany();
-    if (!posts || !posts.length) {
+    const existingPosts = posts.filter((post) => post.isdeleted !== true);
+    if (!existingPosts || !existingPosts.length) {
       return res.status(404).json({ error: "No posts found" });
     }
     return res
       .status(200)
-      .json({ message: `${posts.length} Posts found`, posts });
+      .json({ message: `${existingPosts.length} Posts found`, existingPosts });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -52,7 +53,7 @@ export const getSinglePost = async (req: Request, res: Response) => {
   try {
     const id = req.params.postId;
     const post = await prisma.post.findUnique({ where: { id } });
-    if (!post) {
+    if (!post || post.isdeleted) {
       return res.status(404).json({ error: "Post not found" });
     }
     return res.status(200).json({ message: "Post found", post });
@@ -68,15 +69,10 @@ export const updatePost = async (req: Request, res: Response) => {
     const id = req.params.postId;
     const currentUser = req.user;
     const post = await prisma.post.findUnique({ where: { id } });
-    if (!post) {
+    if (!post || post.isdeleted) {
       return res.status(404).json({ error: "Post not found" });
     }
-    if (
-      post.authorid !== currentUser?.id &&
-      currentUser?.role !== "MODERATOR" &&
-      currentUser?.role !== "ADMIN" &&
-      currentUser?.role !== "SUPER_ADMIN"
-    ) {
+    if (post.authorid !== currentUser?.id) {
       return res.status(403).json({ error: "You cannot edit this post" });
     }
     const updatedPost = await prisma.post.update({
@@ -102,19 +98,46 @@ export const deletePost = async (req: Request, res: Response) => {
   try {
     const id = req.params.postId;
     const currentUser = req.user;
+    if (!currentUser) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
     const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
-    if (
-      post.authorid !== currentUser?.id &&
-      currentUser?.role !== "MODERATOR" &&
-      currentUser?.role !== "ADMIN" &&
-      currentUser?.role !== "SUPER_ADMIN"
-    ) {
-      return res.status(403).json({ error: "You cannot delete this post" });
+    let isAuthorized = false;
+
+    // Case 1: Author
+    if (post.authorid === currentUser.id) {
+      isAuthorized = true;
     }
-    const deleted = await prisma.post.delete({ where: { id } });
+
+    // Case 2: Global moderator or admin
+    if (["ADMIN", "SUPER_ADMIN"].includes(currentUser.role as string)) {
+      isAuthorized = true;
+    }
+
+    // Case 3: Community moderator (if post belongs to a community)
+    if (!isAuthorized && post.subcommunityid) {
+      const communityModerator = await prisma.moderator.findFirst({
+        where: {
+          userid: currentUser.id,
+          subcommunityid: post.subcommunityid,
+        },
+      });
+
+      if (communityModerator) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: "You cannot edit this post" });
+    }
+    const deleted = await prisma.post.update({
+      where: { id },
+      data: { isdeleted: true },
+    });
     if (!deleted) {
       return res.status(500).json({ error: "Failed to delete post" });
     }
@@ -461,12 +484,7 @@ export const updateComment = async (req: Request, res: Response) => {
     if (!comment) {
       return res.status(404).json({ error: "Comment not found" });
     }
-    if (
-      comment.authorid !== currentUser.id &&
-      currentUser?.role !== "MODERATOR" &&
-      currentUser?.role !== "ADMIN" &&
-      currentUser?.role !== "SUPER_ADMIN"
-    ) {
+    if (comment.authorid !== currentUser.id) {
       return res.status(403).json({ error: "You cannot edit this comment" });
     }
     const updatedComment = await prisma.comment.update({

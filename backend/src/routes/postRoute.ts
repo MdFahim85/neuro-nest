@@ -22,11 +22,7 @@ const router = express.Router();
 router
   .route("/")
   .get(getAllPosts)
-  .post(
-    authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
-    createPost
-  );
+  .post(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), createPost);
 
 //Search posts route
 router.route("/search").get(searchPosts);
@@ -35,26 +31,10 @@ router.route("/search").get(searchPosts);
 router
   .route("/:postId")
   .get(getSinglePost)
-  .put(
-    authMiddleware,
-    authorizeRoles(
-      "REGULAR_USER",
-      "STUDENT",
-      "MODERATOR",
-      "ADMIN",
-      "SUPER_ADMIN"
-    ),
-    updatePost
-  )
+  .put(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), updatePost)
   .delete(
     authMiddleware,
-    authorizeRoles(
-      "REGULAR_USER",
-      "STUDENT",
-      "MODERATOR",
-      "ADMIN",
-      "SUPER_ADMIN"
-    ),
+    authorizeRoles("REGULAR_USER", "STUDENT", "ADMIN", "SUPER_ADMIN"),
     deletePost
   );
 
@@ -64,31 +44,19 @@ router
   .get(getPostComments)
   .post(
     authMiddleware,
-    authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     createComment
   );
 router
   .route("/:postId/comments/:commentId")
   .put(
     authMiddleware,
-    authorizeRoles(
-      "REGULAR_USER",
-      "STUDENT",
-      "MODERATOR",
-      "ADMIN",
-      "SUPER_ADMIN"
-    ),
+    authorizeRoles("REGULAR_USER", "STUDENT", ),
     updateComment
   )
   .delete(
     authMiddleware,
-    authorizeRoles(
-      "REGULAR_USER",
-      "STUDENT",
-      "MODERATOR",
-      "ADMIN",
-      "SUPER_ADMIN"
-    ),
+    authorizeRoles("REGULAR_USER", "STUDENT", "ADMIN", "SUPER_ADMIN"),
     deleteComment
   );
 // Comment vote toggle route
@@ -96,25 +64,21 @@ router
   .route("/:postId/comments/:commentId/vote")
   .post(
     authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     voteToggleComment
   );
 
 // Vote toggle route
 router
   .route("/:postId/vote")
-  .post(
-    authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
-    voteToggle
-  );
+  .post(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), voteToggle);
 
 // Save post toggle route
 router
   .route("/:postId/save")
   .post(
     authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     savePostToggle
   );
 

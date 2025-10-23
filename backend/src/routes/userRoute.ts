@@ -17,14 +17,10 @@ import { authMiddleware, authorizeRoles } from "../middlewares/auth";
 // Personal routes
 router
   .route("/me")
-  .get(
-    authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
-    getMyDetails
-  )
+  .get(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), getMyDetails)
   .put(
     authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     updateMyDetails
   );
 
@@ -32,7 +28,7 @@ router
   .route("/me/change-password")
   .put(
     authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     changeUserPassword
   );
 
@@ -40,7 +36,7 @@ router
   .route("/me/saved-posts")
   .get(
     authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", "MODERATOR"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     getSavedPosts
   );
 
@@ -49,14 +45,10 @@ router.route("/:userId").get(getUserDetails);
 router.route("/:userId/posts").get(getUserPosts);
 router
   .route("/:userId/follow")
-  .post(
-    authMiddleware,
-    authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
-    followUser
-  )
+  .post(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), followUser)
   .delete(
     authMiddleware,
-    authorizeRoles("MODERATOR", "REGULAR_USER", "STUDENT"),
+    authorizeRoles("REGULAR_USER", "STUDENT"),
     unfollowUser
   );
 
