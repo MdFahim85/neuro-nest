@@ -12,17 +12,54 @@ export const createPost = async (req: Request, res: Response) => {
     if (!author) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+
     const authorId = author.id;
-    const post = await prisma.post.create({
-      data: {
-        title,
-        content,
-        authorid: authorId,
-        ...(mediaUrls && { mediaurls: mediaUrls }),
-        ...(hashTags && { hashtags: hashTags }),
-        ...(subCommunityId && { subcommunityid: subCommunityId }),
-      },
-    });
+
+    if (subCommunityId) {
+      const [authorInCommunity, authorInMod] = await Promise.all([
+        prisma.joinRequest.findUnique({
+          where: {
+            userid_subcommunityid: {
+              userid: authorId,
+              subcommunityid: subCommunityId,
+            },
+          },
+        }),
+        prisma.moderator.findUnique({
+          where: {
+            userid_subcommunityid: {
+              userid: authorId,
+              subcommunityid: subCommunityId,
+            },
+          },
+        }),
+      ]);
+
+      if (!authorInCommunity && !authorInMod) {
+        return res
+          .status(403)
+          .json({ error: "User does not belong in this community" });
+      }
+    }
+
+    const [post] = await prisma.$transaction([
+      prisma.post.create({
+        data: {
+          title,
+          content,
+          authorid: authorId,
+          ...(mediaUrls && { mediaurls: mediaUrls }),
+          ...(hashTags && { hashtags: hashTags }),
+          ...(subCommunityId && { subcommunityid: subCommunityId }),
+        },
+      }),
+      subCommunityId &&
+        prisma.subCommunity.update({
+          where: { id: subCommunityId },
+          data: { postcount: { increment: 1 } },
+        }),
+    ]);
+
     if (!post) {
       return res.status(500).json({ error: "Failed to created post" });
     }
@@ -119,10 +156,12 @@ export const deletePost = async (req: Request, res: Response) => {
 
     // Case 3: Community moderator (if post belongs to a community)
     if (!isAuthorized && post.subcommunityid) {
-      const communityModerator = await prisma.moderator.findFirst({
+      const communityModerator = await prisma.moderator.findUnique({
         where: {
-          userid: currentUser.id,
-          subcommunityid: post.subcommunityid,
+          userid_subcommunityid: {
+            userid: currentUser.id,
+            subcommunityid: post.subcommunityid,
+          },
         },
       });
 
