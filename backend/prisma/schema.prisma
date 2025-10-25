@@ -42,21 +42,22 @@ model Badge {
 }
 
 model Comment {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  postid        String    @db.Uuid
-  authorid      String    @db.Uuid
-  parentid      String?   @db.Uuid
-  content       String
-  upvotecount   Int?      @default(0)
-  downvotecount Int?      @default(0)
-  isdeleted     Boolean?  @default(false)
-  createdat     DateTime? @default(now()) @db.Timestamp(6)
-  updatedat     DateTime? @default(now()) @db.Timestamp(6)
-  Comment       Comment?  @relation("CommentToComment", fields: [parentid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_parent")
-  other_Comment Comment[] @relation("CommentToComment")
-  Post          Post      @relation(fields: [postid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_post")
-  User          User      @relation(fields: [authorid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_user")
-  Vote          Vote[]
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postid           String             @db.Uuid
+  authorid         String             @db.Uuid
+  parentid         String?            @db.Uuid
+  content          String
+  upvotecount      Int?               @default(0)
+  downvotecount    Int?               @default(0)
+  isdeleted        Boolean?           @default(false)
+  createdat        DateTime?          @default(now()) @db.Timestamp(6)
+  updatedat        DateTime?          @default(now()) @db.Timestamp(6)
+  Comment          Comment?           @relation("CommentToComment", fields: [parentid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_parent")
+  other_Comment    Comment[]          @relation("CommentToComment")
+  Post             Post               @relation(fields: [postid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_post")
+  User             User               @relation(fields: [authorid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comment_user")
+  CommunityWarning CommunityWarning[]
+  Vote             Vote[]
 }
 
 model Conversation {
@@ -159,7 +160,6 @@ model JoinRequest {
   requestedat    DateTime?      @default(now()) @db.Timestamp(6)
   resolvedat     DateTime?      @db.Timestamp(6)
   resolvedby     String?        @db.Uuid
-  
   SubCommunity   SubCommunity   @relation(fields: [subcommunityid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_join_comm")
 
   @@unique([userid, subcommunityid])
@@ -204,24 +204,25 @@ model Notification {
 }
 
 model Post {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  authorid         String        @db.Uuid
-  subcommunityid   String?       @db.Uuid
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorid         String             @db.Uuid
+  subcommunityid   String?            @db.Uuid
   title            String
   content          String
   mediaurls        String[]
   hashtags         String[]
-  upvotecount      Int?          @default(0)
-  downvotecount    Int?          @default(0)
-  commentcount     Int?          @default(0)
-  isdeleted        Boolean?      @default(false)
-  requiresapproval Boolean?      @default(false)
-  isapproved       Boolean?      @default(false)
-  createdat        DateTime?     @default(now()) @db.Timestamp(6)
-  updatedat        DateTime?     @default(now()) @db.Timestamp(6)
+  upvotecount      Int?               @default(0)
+  downvotecount    Int?               @default(0)
+  commentcount     Int?               @default(0)
+  isdeleted        Boolean?           @default(false)
+  requiresapproval Boolean?           @default(false)
+  isapproved       Boolean?           @default(false)
+  createdat        DateTime?          @default(now()) @db.Timestamp(6)
+  updatedat        DateTime?          @default(now()) @db.Timestamp(6)
   Comment          Comment[]
-  SubCommunity     SubCommunity? @relation(fields: [subcommunityid], references: [id], onUpdate: NoAction, map: "fk_post_comm")
-  User             User          @relation(fields: [authorid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_user")
+  CommunityWarning CommunityWarning[]
+  SubCommunity     SubCommunity?      @relation(fields: [subcommunityid], references: [id], map: "fk_post_subcommunity")
+  User             User               @relation(fields: [authorid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_user")
   SavedPost        SavedPost[]
   Vote             Vote[]
 
@@ -242,22 +243,24 @@ model SavedPost {
 }
 
 model SubCommunity {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String        @unique
-  slug        String        @unique
-  description String
-  rules       String?
-  creatorid   String        @db.Uuid
-  isprivate   Boolean?      @default(false)
-  membercount Int?          @default(1)
-  postcount   Int?          @default(0)
-  createdat   DateTime?     @default(now()) @db.Timestamp(6)
-  updatedat   DateTime?     @default(now()) @db.Timestamp(6)
-  isdeleted   Boolean?      @default(false)
-  JoinRequest JoinRequest[]
-  Moderator   Moderator[]
-  Post        Post[]
-  User        User          @relation(fields: [creatorid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_creator")
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String             @unique
+  slug             String             @unique
+  description      String
+  rules            String?
+  creatorid        String             @db.Uuid
+  isprivate        Boolean?           @default(false)
+  membercount      Int?               @default(1)
+  postcount        Int?               @default(0)
+  createdat        DateTime?          @default(now()) @db.Timestamp(6)
+  updatedat        DateTime?          @default(now()) @db.Timestamp(6)
+  isdeleted        Boolean?           @default(false)
+  CommunityBan     CommunityBan[]
+  CommunityWarning CommunityWarning[]
+  JoinRequest      JoinRequest[]
+  Moderator        Moderator[]
+  Post             Post[]
+  User             User               @relation(fields: [creatorid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_creator")
 }
 
 model TierProgress {
@@ -275,36 +278,40 @@ model TierProgress {
 }
 
 model User {
-  id                              String                    @id @default(dbgenerated("auth.uid()")) @db.Uuid
-  email                           String                    @unique
-  username                        String                    @unique
-  displayname                     String
-  dateofbirth                     DateTime?                 @db.Timestamp(6)
-  bio                             String?
-  profilepicture                  String?
-  bannerimage                     String?
-  role                            UserRole?                 @default(REGULAR_USER)
-  xppoints                        Int?                      @default(0)
-  warningcount                    Int?                      @default(0)
-  isbanned                        Boolean?                  @default(false)
-  isdeleted                       Boolean?                  @default(false)
-  createdat                       DateTime?                 @default(now()) @db.Timestamp(6)
-  updatedat                       DateTime?                 @default(now()) @db.Timestamp(6)
-  AdminAction                     AdminAction[]
-  Comment                         Comment[]
-  ConversationParticipant         ConversationParticipant[]
-  CourseEnrollment                CourseEnrollment[]
-  Follow_Follow_followeridToUser  Follow[]                  @relation("Follow_followeridToUser")
-  Follow_Follow_followingidToUser Follow[]                  @relation("Follow_followingidToUser")
-  Message                         Message[]
-  Moderator                       Moderator[]
-  Notification                    Notification[]
-  Post                            Post[]
-  SavedPost                       SavedPost[]
-  SubCommunity                    SubCommunity[]
-  UserAchievement                 UserAchievement[]
-  UserBadge                       UserBadge[]
-  Vote                            Vote[]
+  id                                               String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                            String                    @unique
+  username                                         String                    @unique
+  displayname                                      String
+  dateofbirth                                      DateTime?                 @db.Timestamp(6)
+  bio                                              String?
+  profilepicture                                   String?
+  bannerimage                                      String?
+  role                                             UserRole?                 @default(REGULAR_USER)
+  xppoints                                         Int?                      @default(0)
+  warningcount                                     Int?                      @default(0)
+  isbanned                                         Boolean?                  @default(false)
+  isdeleted                                        Boolean?                  @default(false)
+  createdat                                        DateTime?                 @default(now()) @db.Timestamp(6)
+  updatedat                                        DateTime?                 @default(now()) @db.Timestamp(6)
+  AdminAction                                      AdminAction[]
+  Comment                                          Comment[]
+  CommunityBan_CommunityBan_bannedbyToUser         CommunityBan[]            @relation("CommunityBan_bannedbyToUser")
+  CommunityBan_CommunityBan_useridToUser           CommunityBan[]            @relation("CommunityBan_useridToUser")
+  CommunityWarning_CommunityWarning_issuedbyToUser CommunityWarning[]        @relation("CommunityWarning_issuedbyToUser")
+  CommunityWarning_CommunityWarning_useridToUser   CommunityWarning[]        @relation("CommunityWarning_useridToUser")
+  ConversationParticipant                          ConversationParticipant[]
+  CourseEnrollment                                 CourseEnrollment[]
+  Follow_Follow_followeridToUser                   Follow[]                  @relation("Follow_followeridToUser")
+  Follow_Follow_followingidToUser                  Follow[]                  @relation("Follow_followingidToUser")
+  Message                                          Message[]
+  Moderator                                        Moderator[]
+  Notification                                     Notification[]
+  Post                                             Post[]
+  SavedPost                                        SavedPost[]
+  SubCommunity                                     SubCommunity[]
+  UserAchievement                                  UserAchievement[]
+  UserBadge                                        UserBadge[]
+  Vote                                             Vote[]
 
   @@index([createdat], map: "idx_user_createdat")
   @@index([email], map: "idx_user_email")
@@ -349,6 +356,42 @@ model Vote {
 
   @@unique([userid, commentid])
   @@unique([userid, postid])
+}
+
+model CommunityBan {
+  id                               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid                           String       @db.Uuid
+  subcommunityid                   String       @db.Uuid
+  reason                           String
+  bannedby                         String       @db.Uuid
+  bannedat                         DateTime?    @default(now()) @db.Timestamp(6)
+  expiresat                        DateTime?    @db.Timestamp(6)
+  isactive                         Boolean?     @default(true)
+  SubCommunity                     SubCommunity @relation(fields: [subcommunityid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_communityban_comm")
+  User_CommunityBan_bannedbyToUser User         @relation("CommunityBan_bannedbyToUser", fields: [bannedby], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_communityban_mod")
+  User_CommunityBan_useridToUser   User         @relation("CommunityBan_useridToUser", fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_communityban_user")
+
+  @@unique([userid, subcommunityid, isactive])
+  @@index([userid, subcommunityid], map: "idx_communityban_user_comm")
+}
+
+model CommunityWarning {
+  id                                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid                               String       @db.Uuid
+  subcommunityid                       String       @db.Uuid
+  postid                               String?      @db.Uuid
+  commentid                            String?      @db.Uuid
+  reason                               String
+  message                              String?
+  issuedby                             String       @db.Uuid
+  issuedat                             DateTime?    @default(now()) @db.Timestamp(6)
+  SubCommunity                         SubCommunity @relation(fields: [subcommunityid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_communitywarning_comm")
+  Comment                              Comment?     @relation(fields: [commentid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_communitywarning_comment")
+  User_CommunityWarning_issuedbyToUser User         @relation("CommunityWarning_issuedbyToUser", fields: [issuedby], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_communitywarning_mod")
+  Post                                 Post?        @relation(fields: [postid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_communitywarning_post")
+  User_CommunityWarning_useridToUser   User         @relation("CommunityWarning_useridToUser", fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_communitywarning_user")
+
+  @@index([userid, subcommunityid], map: "idx_communitywarning_user_comm")
 }
 
 enum AchievementType {
@@ -403,7 +446,6 @@ enum ResourceType {
 enum UserRole {
   REGULAR_USER
   STUDENT
-  MODERATOR
   ADMIN
   SUPER_ADMIN
 }

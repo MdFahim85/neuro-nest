@@ -42,29 +42,31 @@ export const createPost = async (req: Request, res: Response) => {
       }
     }
 
-    const [post] = await prisma.$transaction([
-      prisma.post.create({
-        data: {
-          title,
-          content,
-          authorid: authorId,
-          ...(mediaUrls && { mediaurls: mediaUrls }),
-          ...(hashTags && { hashtags: hashTags }),
-          ...(subCommunityId && { subcommunityid: subCommunityId }),
-        },
-      }),
-      subCommunityId &&
-        prisma.subCommunity.update({
+    const post = await prisma.post.create({
+      data: {
+        title,
+        content,
+        authorid: authorId,
+        ...(mediaUrls && { mediaurls: mediaUrls }),
+        ...(hashTags && { hashtags: hashTags }),
+        ...(subCommunityId && { subcommunityid: subCommunityId }),
+      },
+    });
+    if (post) {
+      if (subCommunityId) {
+        await prisma.subCommunity.update({
           where: { id: subCommunityId },
           data: { postcount: { increment: 1 } },
-        }),
-    ]);
+        });
+      }
+    }
 
     if (!post) {
       return res.status(500).json({ error: "Failed to created post" });
     }
     return res.status(201).json({ message: "Post created", post });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -561,7 +563,6 @@ export const deleteComment = async (req: Request, res: Response) => {
     }
     if (
       comment.authorid !== currentUser.id &&
-      currentUser?.role !== "MODERATOR" &&
       currentUser?.role !== "ADMIN" &&
       currentUser?.role !== "SUPER_ADMIN"
     ) {
