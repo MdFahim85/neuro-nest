@@ -2,6 +2,7 @@ import { Response, NextFunction, Request } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../config/prisma";
 import { UserRole } from "@prisma/client";
+import { error } from "console";
 
 export async function authMiddleware(
   req: Request,
@@ -45,4 +46,33 @@ export function authorizeRoles(...allowedRoles: UserRole[]) {
 
     next();
   };
+}
+
+export async function moderatorVerify(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const currentUserId = req.user?.id;
+  const { communityId } = req.params;
+  const existsComm = await prisma.subCommunity.findUnique({
+    where: { id: communityId },
+  });
+  if (!existsComm) {
+    return res.status(404).json({ error: "Community not found" });
+  }
+  const isModerator = await prisma.moderator.findUnique({
+    where: {
+      userid_subcommunityid: {
+        userid: currentUserId as string,
+        subcommunityid: communityId,
+      },
+    },
+  });
+  if (!isModerator) {
+    return res
+      .status(401)
+      .json({ error: "You cannot access this community resource" });
+  }
+  next();
 }

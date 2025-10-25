@@ -14,6 +14,10 @@ import { authMiddleware, authorizeRoles } from "../middlewares/auth";
 
 const router = express.Router();
 
+// Moderator nested route
+
+router.use("/:communityId/moderators", require("./moderatorRoute"));
+
 // Community crud routes
 router
   .route("/")
