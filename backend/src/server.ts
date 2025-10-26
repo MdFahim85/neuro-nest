@@ -21,6 +21,7 @@ app.use("/api/v1/users", require("./routes/userRoute"));
 app.use("/api/v1/auth", require("./routes/authRoute"));
 app.use("/api/v1/posts", require("./routes/postRoute"));
 app.use("/api/v1/communities", require("./routes/communityRoute"));
+app.use("/api/v1/notifications", require("./routes/notificationRoute"));
 
 app.get("/", (_req, res) => {
   res.send("Welcome");
