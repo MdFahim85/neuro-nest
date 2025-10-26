@@ -1,11 +1,13 @@
 import express from "express";
 import {
+  banUser,
   communityVisibility,
   createModerator,
   deleteModerator,
   getAllModerators,
   getJoinRequests,
   handleJoinRequest,
+  warnUser,
 } from "../controllers/moderatorController";
 import {
   authMiddleware,
@@ -61,6 +63,24 @@ router
     authorizeRoles("REGULAR_USER", "STUDENT"),
     moderatorVerify,
     communityVisibility
+  );
+
+router
+  .route("/:userId/warn")
+  .post(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT"),
+    moderatorVerify,
+    warnUser
+  );
+
+router
+  .route("/:userId/ban")
+  .post(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT"),
+    moderatorVerify,
+    banUser
   );
 
 module.exports = router;
