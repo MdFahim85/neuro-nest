@@ -97,11 +97,16 @@ export const getUserPosts = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    const posts = await prisma.post.findMany({ where: { authorid: user.id } });
-    if (!posts || !posts.length) {
+    const posts = await prisma.post.findMany({
+      where: { authorid: user.id },
+      orderBy: { createdat: "desc" },
+    });
+
+    const existingPosts = posts.filter((post) => post.isdeleted !== true);
+    if (!existingPosts || !existingPosts.length) {
       return res.status(404).json({ error: "Posts not found" });
     }
-    return res.status(200).json({ message: "User posts found", posts });
+    return res.status(200).json({ message: "User posts found", existingPosts });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }

@@ -66,7 +66,6 @@ export const createPost = async (req: Request, res: Response) => {
     }
     return res.status(201).json({ message: "Post created", post });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -74,8 +73,12 @@ export const createPost = async (req: Request, res: Response) => {
 // Getting all posts (#pagination required)
 export const getAllPosts = async (req: Request, res: Response) => {
   try {
-    const posts = await prisma.post.findMany();
-    const existingPosts = posts.filter((post) => post.isdeleted !== true);
+    const posts = await prisma.post.findMany({
+      orderBy: { createdat: "desc" },
+    });
+    const existingPosts = posts.filter(
+      (post) => post.isdeleted !== true && !post.subcommunityid
+    );
     if (!existingPosts || !existingPosts.length) {
       return res.status(404).json({ error: "No posts found" });
     }
@@ -181,6 +184,14 @@ export const deletePost = async (req: Request, res: Response) => {
     });
     if (!deleted) {
       return res.status(500).json({ error: "Failed to delete post" });
+    }
+    if (post) {
+      if (post.subcommunityid) {
+        await prisma.subCommunity.update({
+          where: { id: post.subcommunityid },
+          data: { postcount: { decrement: 1 } },
+        });
+      }
     }
     return res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {

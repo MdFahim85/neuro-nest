@@ -1,8 +1,11 @@
 import express from "express";
 import {
+  communityVisibility,
   createModerator,
   deleteModerator,
   getAllModerators,
+  getJoinRequests,
+  handleJoinRequest,
 } from "../controllers/moderatorController";
 import {
   authMiddleware,
@@ -31,6 +34,33 @@ router
     authorizeRoles("REGULAR_USER", "STUDENT"),
     moderatorVerify,
     deleteModerator
+  );
+
+router
+  .route("/join-requests")
+  .get(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT"),
+    moderatorVerify,
+    getJoinRequests
+  );
+
+router
+  .route("/join-requests/:requestId")
+  .put(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT"),
+    moderatorVerify,
+    handleJoinRequest
+  );
+
+router
+  .route("/change-visibility")
+  .put(
+    authMiddleware,
+    authorizeRoles("REGULAR_USER", "STUDENT"),
+    moderatorVerify,
+    communityVisibility
   );
 
 module.exports = router;

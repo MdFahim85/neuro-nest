@@ -181,6 +181,14 @@ export const deleteCommunity = async (req: Request, res: Response) => {
         where: { subcommunityid: existsComm.id },
       });
 
+      await tx.joinRequest.deleteMany({
+        where: { subcommunityid: existsComm.id },
+      });
+      await tx.post.updateMany({
+        where: { subcommunityid: existsComm.id },
+        data: { isdeleted: true },
+      });
+
       return deletedCommunity;
     });
 
@@ -318,6 +326,11 @@ export const leaveCommunity = async (req: Request, res: Response) => {
         where: { id: member.id },
       });
 
+      await tx.post.updateMany({
+        where: { authorid: currentUserId, subcommunityid: communityId },
+        data: { isdeleted: true },
+      });
+
       // Decrement member count
       const updatedCommunity = await tx.subCommunity.update({
         where: { id: communityId },
@@ -416,7 +429,7 @@ export const getCommunityPosts = async (req: Request, res: Response) => {
 
     // 2️⃣ Fetch posts
     const posts = await prisma.post.findMany({
-      where: { subcommunityid: communityId },
+      where: { subcommunityid: communityId, isdeleted: false },
       orderBy: { createdat: "desc" },
       include: {
         User: {

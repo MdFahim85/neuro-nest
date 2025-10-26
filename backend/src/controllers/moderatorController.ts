@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 
+// Get all mods
 export const getAllModerators = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
@@ -27,6 +28,7 @@ export const getAllModerators = async (req: Request, res: Response) => {
   }
 };
 
+// Create mod
 export const createModerator = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
@@ -62,6 +64,7 @@ export const createModerator = async (req: Request, res: Response) => {
   }
 };
 
+// Delete mod
 export const deleteModerator = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
@@ -108,6 +111,127 @@ export const deleteModerator = async (req: Request, res: Response) => {
     return res
       .status(200)
       .json({ message: "Moderator removed successfully", deletedMod });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get join requests
+export const getJoinRequests = async (req: Request, res: Response) => {
+  try {
+    const { communityId } = req.params;
+    const communityExists = await prisma.subCommunity.findUnique({
+      where: { id: communityId },
+    });
+    if (!communityExists) {
+      return res.status(404).json({ error: "Community not found" });
+    }
+    const requests = await prisma.joinRequest.findMany({
+      where: { subcommunityid: communityId },
+    });
+    if (!requests || !requests.length) {
+      return res.status(404).json({ error: "No requests found" });
+    }
+    const approvedRequests = requests.filter(
+      (request) => request.status === "APPROVED"
+    );
+    const pendingRequests = requests.filter(
+      (request) => request.status === "PENDING"
+    );
+    const rejectedRequests = requests.filter(
+      (request) => request.status === "REJECTED"
+    );
+
+    return res.status(200).json({
+      message: "Requests retrieved successfully",
+      approvedRequests,
+      pendingRequests,
+      rejectedRequests,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Approve/Reject join requests
+export const handleJoinRequest = async (req: Request, res: Response) => {
+  try {
+    const { communityId, requestId } = req.params;
+    const communityExists = await prisma.subCommunity.findUnique({
+      where: { id: communityId },
+    });
+    if (!communityExists) {
+      return res.status(404).json({ error: "Community not found" });
+    }
+    const requestExists = await prisma.joinRequest.findUnique({
+      where: { id: requestId },
+    });
+    if (!requestExists || requestExists.status !== "PENDING") {
+      return res.status(404).json({ error: "Request not found" });
+    }
+    const { requestAction } = req.body;
+    const validActions = ["APPROVED", "REJECTED"];
+    if (!validActions.includes(requestAction)) {
+      return res.status(400).json({ error: "Invalid request action" });
+    }
+    const updatedRequest = await prisma.joinRequest.update({
+      where: { id: requestId },
+      data: { status: requestAction },
+    });
+    if (!updatedRequest) {
+      return res.status(400).json({ error: "Failed to update join request" });
+    }
+    if (requestAction === "APPROVED") {
+      await prisma.subCommunity.update({
+        where: { id: communityId },
+        data: { membercount: { increment: 1 } },
+      });
+    }
+    return res.status(200).json({
+      message: `User request has been ${requestAction}`,
+      updatedRequest,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Community visibility toggle
+export const communityVisibility = async (req: Request, res: Response) => {
+  try {
+    const { communityId } = req.params;
+    const currentUserId = req.user?.id;
+    const commExists = await prisma.subCommunity.findUnique({
+      where: { id: communityId },
+    });
+    if (!commExists) {
+      return res.status(404).json({ error: "Community not found" });
+    }
+    const currentMod = await prisma.moderator.findUnique({
+      where: {
+        userid_subcommunityid: {
+          userid: currentUserId as string,
+          subcommunityid: communityId,
+        },
+      },
+    });
+    if (!currentMod?.issupermoderator) {
+      return res.status(403).json({
+        error: "You cannot perform this action. You are not the group creator",
+      });
+    }
+    const updatedCommunity = await prisma.subCommunity.update({
+      where: { id: communityId },
+      data: { isprivate: !commExists.isprivate },
+    });
+    if (!updatedCommunity) {
+      return res
+        .status(400)
+        .json({ error: "Failed to update community visibility" });
+    }
+    return res
+      .status(200)
+      .json({ message: "Community visibility updated", updatedCommunity });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
