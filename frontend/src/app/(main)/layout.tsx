@@ -5,5 +5,7 @@ export default function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div>{children}</div>;
+  return (
+    <div className="flex-1 flex items-center justify-center">{children}</div>
+  );
 }

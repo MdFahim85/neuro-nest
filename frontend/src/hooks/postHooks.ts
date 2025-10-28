@@ -1,15 +1,13 @@
-"use client";
-
-import { registerUser } from "@/lib/api";
+import { createPost } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-export function useRegisterUser() {
+export function useCreatePost() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: registerUser,
+    mutationFn: createPost,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["register"] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
   });
 

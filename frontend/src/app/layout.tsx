@@ -51,9 +51,8 @@ export default function RootLayout({
                   <div className="border-b border-b-emerald-600 dark:border-b-emerald-300 py-2">
                     <Navbar />
                   </div>
-                  <div className="flex-1 flex items-center justify-center">
-                    {children}
-                  </div>
+                  {children}
+
                 </div>
               </div>
               <Toaster position="top-center" />

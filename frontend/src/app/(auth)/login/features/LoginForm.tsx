@@ -16,7 +16,7 @@ import { loginFormSchema } from "@/lib/zodSchema";
 import { useState } from "react";
 import { Eye, EyeClosedIcon } from "lucide-react";
 import z from "zod";
-import { useLoginUser } from "@/hooks/useLogin";
+import { useLoginUser } from "@/hooks/authHooks";
 import { useSearchParams } from "next/navigation";
 
 export function LoginForm() {

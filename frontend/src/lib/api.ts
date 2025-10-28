@@ -1,5 +1,5 @@
 import apiUrl from "./axios";
-
+// Auth API
 export const registerUser = async (data: {
   username: string;
   displayname: string;
@@ -13,12 +13,9 @@ export const registerUser = async (data: {
     return Promise.reject(error);
   }
 };
-
 export const loginUser = async (data: { email: string; password: string }) => {
   try {
-    const response = await apiUrl.post("/auth/login", data, {
-      withCredentials: true,
-    });
+    const response = await apiUrl.post("/auth/login", data);
     return response.data;
   } catch (error) {
     return Promise.reject(error);
@@ -26,9 +23,24 @@ export const loginUser = async (data: { email: string; password: string }) => {
 };
 export const logoutUser = async () => {
   try {
-    const response = await apiUrl.get("/auth/logout", {
-      withCredentials: true,
-    });
+    const response = await apiUrl.get("/auth/logout");
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
+// Post API
+export const createPost = async (data: {
+  title: string;
+  content: string;
+  authorId: string;
+  mediaUrls?: string[];
+  hashTags?: string[];
+  subCommunityId?: string;
+}) => {
+  try {
+    const response = await apiUrl.post("/posts", data);
     return response.data;
   } catch (error) {
     return Promise.reject(error);
