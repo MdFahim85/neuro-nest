@@ -17,6 +17,7 @@ import { useState } from "react";
 import { Eye, EyeClosedIcon } from "lucide-react";
 import z from "zod";
 import { useLoginUser } from "@/hooks/useLogin";
+import { useSearchParams } from "next/navigation";
 
 export function LoginForm() {
   const [showPass, setShowPass] = useState(false);
@@ -33,18 +34,20 @@ export function LoginForm() {
     isSuccess,
     isError,
     error,
-    data,
   } = useLoginUser();
-
-  isSuccess && console.log(data);
-
   const onSubmit = (data: z.infer<typeof loginFormSchema>) => {
-    console.log("Form Data:", data);
     login({
       email: data.email,
       password: data.password,
     });
   };
+
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/feed";
+
+  if (isSuccess) {
+    window.location.assign(redirectTo);
+  }
 
   return (
     <Form {...form}>
@@ -97,8 +100,6 @@ export function LoginForm() {
         <Button type="submit" variant={"secondary"} disabled={isPending}>
           Submit
         </Button>
-
-        {isSuccess && <p className="text-green-500">Login successful!</p>}
       </form>
     </Form>
   );

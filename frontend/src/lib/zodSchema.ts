@@ -18,3 +18,7 @@ export const loginFormSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string(),
 });
+
+export const postBoxSchema = z.object({
+  postContent: z.string().min(1, { message: "Please write something" }),
+});

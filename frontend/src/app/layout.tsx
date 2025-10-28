@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/context/theme-provider";
 import { Outfit, JetBrains_Mono } from "next/font/google";
-import QueryProv from "@/components/react-query-provider";
+import QueryProv from "@/context/react-query-provider";
+import { Toaster } from "react-hot-toast";
+import AuthProvider from "@/context/auth-provider";
+import Navbar from "@/components/shared/Navbar";
 
 const outfit = Outfit({
   variable: "--font-sans",
@@ -42,7 +45,19 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <AuthProvider>
+              <div>
+                <div className="mx-20 min-h-screen flex flex-col">
+                  <div className="border-b border-b-emerald-600 dark:border-b-emerald-300 py-2">
+                    <Navbar />
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    {children}
+                  </div>
+                </div>
+              </div>
+              <Toaster position="top-center" />
+            </AuthProvider>
           </ThemeProvider>
         </QueryProv>
       </body>

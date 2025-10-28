@@ -47,13 +47,48 @@ export const signIn = async (req: Request, res: Response) => {
       password,
     });
     if (error) return res.status(401).json({ error: error.message });
+    const user = await prisma.user.findUnique({
+      where: { id: data.user.id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayname: true,
+        role: true,
+        profilepicture: true,
+      },
+    });
+    const cookieOptions = {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
+    res.cookie("token", data.session?.access_token, cookieOptions);
+    res.cookie("user", JSON.stringify(user), cookieOptions);
     return res.status(200).json({
       message: "Login successful",
       token: data.session?.access_token,
       refresh_token: data.session?.refresh_token,
-      user: data.user,
+      user,
     });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const signOut = async (_req: Request, res: Response) => {
+  try {
+    const cookieOptions = {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
+    res.clearCookie("token", cookieOptions);
+    res.clearCookie("user", cookieOptions);
+    return res
+      .status(200)
+      .json({ success: true, message: "User logged out successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
