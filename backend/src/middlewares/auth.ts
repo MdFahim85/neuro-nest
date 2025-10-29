@@ -2,14 +2,13 @@ import { Response, NextFunction, Request } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../config/prisma";
 import { UserRole } from "@prisma/client";
-import { error } from "console";
 
 export async function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const token = req.headers.authorization?.split(" ")[1];
+  const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: "No token provided" });
 
   try {
@@ -26,6 +25,7 @@ export async function authMiddleware(
     req.user = user;
     next();
   } catch (err) {
+    console.log(err);
     res.status(401).json({ error: "Invalid token" });
   }
 }

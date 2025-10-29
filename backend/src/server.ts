@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app: Application = express();
@@ -18,6 +19,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(cookieParser());
 app.use(limiter);
 app.use(helmet());
 app.use(express.json());

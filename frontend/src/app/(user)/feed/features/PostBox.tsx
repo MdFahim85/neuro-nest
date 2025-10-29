@@ -33,23 +33,23 @@ function PostBox() {
     isSuccess,
     isError,
     error,
+    data,
   } = useCreatePost();
   useEffect(() => {
+    form.reset();
+
     if (isSuccess) {
-      form.reset();
+      toast.success(data.message);
     }
     if (isError) {
       toast.error(error?.message as string);
     }
-    console.log("repaint");
-  }, [isSuccess, isError, error, form]);
+  }, [isSuccess, isError, error, data, form]);
 
   const onSubmit = (data: z.infer<typeof postBoxSchema>) => {
     createPost({
-      title: data.postContent.split(" ")[0],
-      content: data.postContent.slice(
-        data.postContent.split(" ")[0].length + 1
-      ),
+      title: data.postContent.split(".")[0],
+      content: data.postContent,
       authorId: user?.id as string,
     });
     form.reset();
