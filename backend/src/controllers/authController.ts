@@ -62,12 +62,11 @@ export const signIn = async (req: Request, res: Response) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
-    res.cookie("token", data.session?.access_token, cookieOptions);
+    res.cookie("accessToken", data.session?.access_token, cookieOptions);
     res.cookie("user", JSON.stringify(user), cookieOptions);
+    res.cookie("refreshToken", data.session?.refresh_token, cookieOptions);
     return res.status(200).json({
       message: "Login successful",
-      token: data.session?.access_token,
-      refresh_token: data.session?.refresh_token,
       user,
     });
   } catch (error) {
@@ -81,8 +80,9 @@ export const signOut = async (_req: Request, res: Response) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("user", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
     return res
       .status(200)
       .json({ success: true, message: "User logged out successfully" });

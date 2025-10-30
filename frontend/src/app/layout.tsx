@@ -46,13 +46,12 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AuthProvider>
-              <div>
-                <div className="mx-20 min-h-screen flex flex-col">
-                  <div className="border-b border-b-emerald-600 dark:border-b-emerald-300 py-2">
+              <div className="bg-neutral-100 dark:bg-neutral-900 ">
+                <div className=" min-h-screen flex flex-col ">
+                  <div className="md:px-20 sm:px-10 px-4 shadow-lg dark:shadow-neutral-800 border-b border-b-emerald-600 dark:border-b-emerald-300 py-2 sticky top-0 z-50 bg-neutral-100 dark:bg-neutral-900">
                     <Navbar />
                   </div>
-                  {children}
-
+                  <div className="md:mx-20 sm:mx-10 mx-4 ">{children}</div>
                 </div>
               </div>
               <Toaster position="top-center" />

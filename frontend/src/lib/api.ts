@@ -1,3 +1,4 @@
+import { VoteType } from "@/types";
 import apiUrl from "./axios";
 // Auth API
 export const registerUser = async (data: {
@@ -41,6 +42,22 @@ export const createPost = async (data: {
 }) => {
   try {
     const response = await apiUrl.post("/posts", data);
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+export const getAllPosts = async () => {
+  try {
+    const response = await apiUrl.get("/posts");
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+export const postVoteToggle = async (postId: string, voteType: VoteType) => {
+  try {
+    const response = await apiUrl.post(`/posts/${postId}/vote`, voteType);
     return response.data;
   } catch (error) {
     return Promise.reject(error);

@@ -7,8 +7,10 @@ export default async function AuthProvider({
   children: React.ReactNode;
 }) {
   const cookie = await cookies();
-  const user = cookie.get("user")?.value;
-  const token = cookie.get("token")?.value;
+  const user = cookie.get("user")
+    ? JSON.parse(cookie.get("user").value)
+    : undefined;
+  const token = cookie.get("accessToken")?.value;
 
   return (
     <AuthClientProvider user={user} token={token}>

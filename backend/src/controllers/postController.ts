@@ -71,20 +71,33 @@ export const createPost = async (req: Request, res: Response) => {
 };
 
 // Getting all posts (#pagination required)
-export const getAllPosts = async (req: Request, res: Response) => {
+export const getAllPosts = async (_req: Request, res: Response) => {
   try {
     const posts = await prisma.post.findMany({
       orderBy: { createdat: "desc" },
+      where: { isdeleted: false },
+      include: {
+        User: {
+          select: {
+            username: true,
+            displayname: true,
+            profilepicture: true,
+          },
+        },
+        SubCommunity: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
-    const existingPosts = posts.filter(
-      (post) => post.isdeleted !== true && !post.subcommunityid
-    );
-    if (!existingPosts || !existingPosts.length) {
+
+    if (!posts || !posts.length) {
       return res.status(404).json({ error: "No posts found" });
     }
     return res
       .status(200)
-      .json({ message: `${existingPosts.length} Posts found`, existingPosts });
+      .json({ message: `${posts.length} Posts found`, posts });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -346,6 +359,7 @@ export const voteToggle = async (req: Request, res: Response) => {
     }
     return res.status(200).json(vote);
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

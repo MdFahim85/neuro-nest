@@ -1,6 +1,7 @@
 "use client";
 import UserAvatar from "@/components/shared/UserAvatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -35,6 +36,7 @@ function PostBox() {
     error,
     data,
   } = useCreatePost();
+
   useEffect(() => {
     form.reset();
 
@@ -60,42 +62,49 @@ function PostBox() {
   }
 
   return (
-    <div className="w-full mt-4">
-      <div className="flex gap-4">
-        <UserAvatar user={user} />
-        <Form {...form}>
-          <form
-            className="flex flex-col flex-1 gap-2"
-            onSubmit={form.handleSubmit(onSubmit)}
+    <Card className="w-full bg-neutral-200 dark:bg-neutral-900  ">
+      <CardContent>
+        <div className="flex gap-4">
+          <div className="sm:block hidden">
+            <UserAvatar user={user} />
+          </div>
+          <Form {...form}>
+            <form
+              className="flex flex-col flex-1 gap-2"
+              onSubmit={form.handleSubmit(onSubmit)}
+            >
+              <FormField
+                control={form.control}
+                name="postContent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        className="placeholder:text-neutral-500 min-h-[100px] resize-none bg-neutral-100"
+                        placeholder="What's on your mind?"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <div className="flex justify-end items-center w-full">
+          <Button
+            type="submit"
+            disabled={!form.watch("postContent") || isPending}
+            onClick={form.handleSubmit(onSubmit)}
           >
-            <FormField
-              control={form.control}
-              name="postContent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Textarea
-                      className="placeholder:text-gray-500 min-h-[100px] resize-none"
-                      placeholder="What's on your mind?"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end items-center">
-              <Button
-                type="submit"
-                disabled={!form.watch("postContent") || isPending}
-              >
-                Post
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </div>
-    </div>
+            Post
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
   );
 }
 
