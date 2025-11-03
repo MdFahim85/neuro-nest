@@ -17,7 +17,7 @@ export function DeleteAlert({
   dbData,
 }: {
   onClick: () => void;
-  dbData: String;
+  dbData: string;
 }) {
   return (
     <AlertDialog>
@@ -43,7 +43,10 @@ export function DeleteAlert({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction className="hover:text-red-500" onClick={onClick}>
+          <AlertDialogAction
+            className="bg-red-500  text-white hover:bg-red-700"
+            onClick={onClick}
+          >
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

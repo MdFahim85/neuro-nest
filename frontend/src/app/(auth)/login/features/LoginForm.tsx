@@ -43,7 +43,7 @@ export function LoginForm() {
   };
 
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/feed";
+  const redirectTo = searchParams.get("redirect") || "/posts";
 
   if (isSuccess) {
     window.location.assign(redirectTo);

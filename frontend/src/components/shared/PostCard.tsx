@@ -5,14 +5,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import {
-  ArrowUp,
-  ArrowDown,
-  MessageSquare,
-  Ellipsis,
-  Trash2,
-  Pencil,
-} from "lucide-react";
+import { ArrowUp, ArrowDown, MessageSquare, Ellipsis } from "lucide-react";
 import Image from "next/image";
 import UserAvatar from "./UserAvatar";
 import { formatDistanceToNow } from "date-fns";
@@ -26,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeletePost, usePostVoteToggle } from "@/hooks/postHooks";
 import { DeleteAlert } from "./DeleteAlert";
-import { DialogModal } from "./DialogModal";
+import { EditPostModal } from "../../app/(user)/posts/features/EditPostModal";
 import Link from "next/link";
 
 export function PostCard({ post }: { post: Post }) {
@@ -86,7 +79,7 @@ export function PostCard({ post }: { post: Post }) {
                     e.preventDefault();
                   }}
                 >
-                  <DialogModal post={post} />
+                  <EditPostModal post={post} />
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={isDeleting}
@@ -137,10 +130,10 @@ export function PostCard({ post }: { post: Post }) {
           {/* Upvote */}
           <Button
             variant={"secondary"}
-            className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
-            onClick={() =>
-              handleVoteToggle({ postId: post.id, voteType: "UPVOTE" })
-            }
+            className={`flex items-center gap-1 hover:text-emerald-500 transition-colors`}
+            onClick={() => {
+              handleVoteToggle({ postId: post.id, voteType: "UPVOTE" });
+            }}
             disabled={isVoting}
           >
             <ArrowUp size={20} />
@@ -149,10 +142,10 @@ export function PostCard({ post }: { post: Post }) {
           {/* Downvote */}
           <Button
             variant={"secondary"}
-            className="flex items-center gap-1 hover:text-red-500 transition-colors"
-            onClick={() =>
-              handleVoteToggle({ postId: post.id, voteType: "DOWNVOTE" })
-            }
+            className={`flex items-center gap-1 hover:text-red-500 transition-colors`}
+            onClick={() => {
+              handleVoteToggle({ postId: post.id, voteType: "DOWNVOTE" });
+            }}
             disabled={isVoting}
           >
             <ArrowDown size={20} />

@@ -16,7 +16,7 @@ import { registerFormSchema } from "@/lib/zodSchema";
 import { useState } from "react";
 import { Eye, EyeClosedIcon } from "lucide-react";
 import z from "zod";
-import { useRegisterUser } from "@/hooks/useRegister";
+import { useRegisterUser } from "@/hooks/authHooks";
 
 export function RegisterForm() {
   const [showPass, setShowPass] = useState(false);

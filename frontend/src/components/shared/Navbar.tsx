@@ -16,7 +16,7 @@ function Navbar() {
   const handleLogout = async () => {
     const data = await logoutUser();
     if (data.success) {
-      window.location.assign("/feed");
+      window.location.assign("/posts");
     } else {
       toast.error(data.message);
     }

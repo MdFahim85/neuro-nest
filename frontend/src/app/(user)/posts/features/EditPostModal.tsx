@@ -21,14 +21,14 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from "../ui/form";
-import { Textarea } from "../ui/textarea";
-import { Input } from "../ui/input";
-import { useEffect, useState } from "react";
+} from "../../../../components/ui/form";
+import { Textarea } from "../../../../components/ui/textarea";
+import { Input } from "../../../../components/ui/input";
+import { useState } from "react";
 import toast from "react-hot-toast";
-import { Label } from "../ui/label";
+import { Label } from "../../../../components/ui/label";
 
-export function DialogModal({ post }: { post: Post }) {
+export function EditPostModal({ post }: { post: Post }) {
   const [open, setOpen] = useState(false);
   const form = useForm({
     resolver: zodResolver(postBoxSchema),
@@ -38,37 +38,28 @@ export function DialogModal({ post }: { post: Post }) {
     },
   });
 
-  const {
-    mutate: editPost,
-    isPending: isEditing,
-    isSuccess,
-    isError,
-    error,
-  } = useEditPost();
-
-  useEffect(() => {
-    if (isSuccess) {
-      setOpen(false);
-    }
-    if (isError) {
-      toast.error(error?.message as string);
-    }
-  }, [isSuccess, isError, error, form]);
+  const { mutate: editPost, isPending: isEditing } = useEditPost();
 
   const handleEditPost = (data: z.infer<typeof postBoxSchema>) => {
     const title = data.postTitle;
-    const content = data.postContent;
-    const hashTags = Array.from(
+    const content = data.postContent.split("#")[0];
+    const newHashTags = Array.from(
       data.postContent.matchAll(/#(\w+)/g),
       (m) => m[1]
     );
 
-    editPost({
-      postId: post.id,
-      title,
-      content,
-      hashTags,
-    });
+    editPost(
+      {
+        postId: post.id,
+        title,
+        content,
+        hashTags: newHashTags.length ? newHashTags : post.hashtags,
+      },
+      {
+        onSuccess: () => setOpen(false),
+        onError: (error) => toast.error(error?.message),
+      }
+    );
   };
 
   return (
@@ -106,6 +97,11 @@ export function DialogModal({ post }: { post: Post }) {
                         className="placeholder:text-neutral-500 resize-none bg-neutral-100"
                         placeholder="Write a post title"
                         {...field}
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.stopPropagation();
+                          }
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -125,6 +121,11 @@ export function DialogModal({ post }: { post: Post }) {
                         className="placeholder:text-neutral-500 min-h-[100px] resize-none bg-neutral-100"
                         placeholder="What's on your mind?"
                         {...field}
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.stopPropagation();
+                          }
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -135,10 +136,21 @@ export function DialogModal({ post }: { post: Post }) {
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => form.reset()}
+                >
+                  Cancel
+                </Button>
               </DialogClose>
-              <Button type="submit" disabled={isEditing}>
-                Save
+              <Button
+                variant={"secondary"}
+                type="submit"
+                disabled={isEditing}
+                className="bg-emerald-500 hover:bg-emerald-700"
+              >
+                {isEditing ? "Saving" : "Save"}
               </Button>
             </DialogFooter>
           </form>
