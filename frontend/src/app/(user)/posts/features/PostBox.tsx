@@ -38,10 +38,9 @@ function PostBox() {
   } = useCreatePost();
 
   useEffect(() => {
-    form.reset();
-
     if (isSuccess) {
       toast.success(data.message);
+      form.reset();
     }
     if (isError) {
       toast.error(error?.message as string);
@@ -49,12 +48,19 @@ function PostBox() {
   }, [isSuccess, isError, error, data, form]);
 
   const onSubmit = (data: z.infer<typeof postBoxSchema>) => {
+    const title = data.postContent.split(".")[0];
+    const content = data.postContent.split(".")[1];
+    const hashTags = Array.from(
+      data.postContent.matchAll(/#(\w+)/g),
+      (m) => m[1]
+    );
+
     createPost({
-      title: data.postContent.split(".")[0],
-      content: data.postContent,
+      title,
+      content,
+      hashTags,
       authorId: user?.id as string,
     });
-    form.reset();
   };
 
   if (!user) {

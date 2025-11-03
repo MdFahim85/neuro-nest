@@ -49,11 +49,7 @@ router
   );
 router
   .route("/:postId/comments/:commentId")
-  .put(
-    authMiddleware,
-    authorizeRoles("REGULAR_USER", "STUDENT", ),
-    updateComment
-  )
+  .put(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), updateComment)
   .delete(
     authMiddleware,
     authorizeRoles("REGULAR_USER", "STUDENT", "ADMIN", "SUPER_ADMIN"),

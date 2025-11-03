@@ -34,7 +34,7 @@ function Navbar() {
     <nav className="w-full my-2 ">
       <div className="flex justify-between items-center ">
         <h1 className="text-lg font-semibold text-emerald-600 dark:text-emerald-300">
-          <Link href="/">Neuro-Nest</Link>
+          <Link href="/posts">Neuro-Nest</Link>
         </h1>
 
         {/* Desktop Navigation */}

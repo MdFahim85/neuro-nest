@@ -24,34 +24,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { usePostVoteToggle } from "@/hooks/postHooks";
+import { useDeletePost, usePostVoteToggle } from "@/hooks/postHooks";
+import { DeleteAlert } from "./DeleteAlert";
+import { DialogModal } from "./DialogModal";
+import Link from "next/link";
 
-export const PostCard = ({ post }: { post: Post }) => {
+export function PostCard({ post }: { post: Post }) {
   const { user } = useAuth();
   const postedDate = formatDistanceToNow(new Date(post.createdat as Date));
-  const { mutate: handleVoteToggle, isPending } = usePostVoteToggle();
+  const { mutate: handleVoteToggle, isPending: isVoting } = usePostVoteToggle();
+  const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
+
+  const handleDeletePost = () => {
+    deletePost(post.id);
+  };
 
   return (
     <Card className="w-full hover:shadow-lg hover:scale-101 transition-all bg-neutral-200 dark:bg-neutral-900">
-      <CardHeader className="border-b">
+      <CardHeader className="border-b border-gray-400 dark:border-gray-800 mx-2">
         <div className="flex items-center justify-between gap-2 text-sm text-gray-500">
           {/* Author/community details */}
           <div className="flex items-center gap-2">
             <UserAvatar user={post.User} />{" "}
             <span
               className={`text-lg text-gray-500 dark:text-gray-200 ${
-                post.subcommunityid ? " :block hidden" : "block"
+                post.subcommunityid ? " sm:block hidden" : "block"
               }`}
             >
               {post.User.displayname}
             </span>
             {post.subcommunityid && (
               <>
-                {" "}
                 /
-                <span className="text-xs bg-emerald-500 text-gray-200  px-2 py-1 rounded">
+                <Link
+                  href={`/communities/${post.subcommunityid}`}
+                  className="text-xs bg-emerald-500 text-gray-200  px-2 py-1 rounded hover:bg-emerald-700 transition-colors"
+                >
                   {post.SubCommunity.name}
-                </span>
+                </Link>
               </>
             )}
             <div className="text-sm text-gray-500 sm:block hidden">
@@ -72,29 +82,25 @@ export const PostCard = ({ post }: { post: Post }) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={() => {
-                    console.log("Edit post", post.id);
+                  onSelect={(e) => {
+                    e.preventDefault();
                   }}
-                  className="cursor-pointer focus:text-emerald-500"
                 >
-                  <Pencil size={16} className="mr-2" />
-                  Edit
+                  <DialogModal post={post} />
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    console.log("Delete post", post.id);
+                  disabled={isDeleting}
+                  onSelect={(e) => {
+                    e.preventDefault();
                   }}
-                  className="cursor-pointer focus:text-red-500"
                 >
-                  <Trash2 size={16} className="mr-2" />
-                  Delete
+                  <DeleteAlert onClick={handleDeletePost} dbData={"post"} />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
         </div>
       </CardHeader>
-
       <CardContent className="py-2">
         <h3 className="text-xl font-semibold py-4">{post.title}</h3>
         <p className="text-gray-700">{post.content}</p>
@@ -126,33 +132,34 @@ export const PostCard = ({ post }: { post: Post }) => {
           </div>
         )}
       </CardContent>
-
       <CardFooter>
         <div className="flex items-center gap-6 text-gray-600">
+          {/* Upvote */}
           <Button
             variant={"secondary"}
             className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
             onClick={() =>
-              handleVoteToggle({ id: post.id, voteType: "UPVOTE" })
+              handleVoteToggle({ postId: post.id, voteType: "UPVOTE" })
             }
-            disabled={isPending}
+            disabled={isVoting}
           >
             <ArrowUp size={20} />
             <span>{post.upvotecount ?? 0}</span>
           </Button>
-
+          {/* Downvote */}
           <Button
             variant={"secondary"}
             className="flex items-center gap-1 hover:text-red-500 transition-colors"
             onClick={() =>
-              handleVoteToggle({ id: post.id, voteType: "UPVOTE" })
+              handleVoteToggle({ postId: post.id, voteType: "DOWNVOTE" })
             }
-            disabled={isPending}
+            disabled={isVoting}
           >
             <ArrowDown size={20} />
             <span>{post.downvotecount ?? 0}</span>
           </Button>
 
+          {/* CommentBox */}
           <Button
             variant={"secondary"}
             className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
@@ -164,4 +171,4 @@ export const PostCard = ({ post }: { post: Post }) => {
       </CardFooter>
     </Card>
   );
-};
+}

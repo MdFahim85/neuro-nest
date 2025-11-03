@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (accessToken && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/feed", request.url));
+    return NextResponse.redirect(new URL("/posts", request.url));
   }
   if (!accessToken && pathname.startsWith("/profile")) {
     const loginUrl = new URL("/login", request.url);

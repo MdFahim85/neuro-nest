@@ -20,5 +20,6 @@ export const loginFormSchema = z.object({
 });
 
 export const postBoxSchema = z.object({
+  postTitle: z.string().min(1, { message: "Post must have a title" }),
   postContent: z.string().min(1, { message: "Please write something" }),
 });

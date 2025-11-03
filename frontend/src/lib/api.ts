@@ -55,9 +55,34 @@ export const getAllPosts = async () => {
     return Promise.reject(error);
   }
 };
-export const postVoteToggle = async (postId: string, voteType: VoteType) => {
+export const postVoteToggle = async (data: {
+  postId: string;
+  voteType: VoteType;
+}) => {
   try {
-    const response = await apiUrl.post(`/posts/${postId}/vote`, voteType);
+    const response = await apiUrl.post(`/posts/${data.postId}/vote`, data);
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+export const editPost = async (data: {
+  postId: String;
+  title?: String;
+  content?: String;
+  mediaUrls?: String[];
+  hashTags?: String[];
+}) => {
+  try {
+    const response = await apiUrl.put(`/posts/${data.postId}/`, data);
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+export const deletePost = async (postId: String) => {
+  try {
+    const response = await apiUrl.delete(`/posts/${postId}`);
     return response.data;
   } catch (error) {
     return Promise.reject(error);
