@@ -1,11 +1,14 @@
 import {
+  commentOnPost,
+  commentVoteToggle,
   createPost,
   deletePost,
   editPost,
+  getAllComments,
   getAllPosts,
+  getAllReplies,
   postVoteToggle,
 } from "@/lib/api";
-import { VoteType } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -30,18 +33,6 @@ export function useGetPosts() {
   return query;
 }
 
-export function usePostVoteToggle() {
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: postVoteToggle,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
-    },
-  });
-
-  return mutation;
-}
-
 export function useEditPost() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -62,6 +53,60 @@ export function useDeletePost() {
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+  });
+
+  return mutation;
+}
+
+export function usePostVoteToggle() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: postVoteToggle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+  });
+
+  return mutation;
+}
+
+export function useCommentOnPost() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: commentOnPost,
+    onSuccess: () => {
+      ["comments", "posts"].forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      );
+    },
+  });
+
+  return mutation;
+}
+
+export function useGetComments(postId: string) {
+  const query = useQuery({
+    queryKey: ["comments", postId],
+    queryFn: getAllComments,
+  });
+  return query;
+}
+
+export function useGetReplies(postId: string, commentId: string) {
+  const query = useQuery({
+    queryKey: ["comments", postId, commentId],
+    queryFn: getAllReplies,
+  });
+  return query;
+}
+
+export function useCommentVoteToggle() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: commentVoteToggle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments"] });
     },
   });
 

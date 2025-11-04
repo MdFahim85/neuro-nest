@@ -6,6 +6,8 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex-1 flex items-center justify-center">{children}</div>
+    <div className="flex-1 flex items-center justify-center min-h-[80vh]">
+      {children}
+    </div>
   );
 }

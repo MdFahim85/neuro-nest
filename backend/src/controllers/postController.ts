@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
+import { error } from "console";
 
 // Creating post
 export const createPost = async (req: Request, res: Response) => {
@@ -359,12 +360,43 @@ export const voteToggle = async (req: Request, res: Response) => {
     }
     return res.status(200).json(vote);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
 
+// export const hasVote = async (req: Request, res: Response) => {
+//   try {
+//     const userId = req.user?.id;
+//     const { postId } = req.params;
+//     const user = await prisma.user.findUnique({
+//       where: { id: userId },
+//       select: { isdeleted: false, isbanned: false },
+//     });
+//     const post = await prisma.post.findUnique({
+//       where: { id: postId },
+//       select: { isdeleted: false },
+//     });
+//     if (!user || !post) {
+//       return res.status(404).json({ error: "Resource not found" });
+//     }
+//     const vote = await prisma.vote.findUnique({
+//       where: {
+//         userid_postid: {
+//           userid: userId as string,
+//           postid: postId,
+//         },
+//       },
+//     });
+//     if (!vote){
+//       return res.json()
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+
 // Save post toggle
+
 export const savePostToggle = async (req: Request, res: Response) => {
   try {
     const id = req.params.postId;
@@ -466,14 +498,58 @@ export const getPostComments = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Post not found" });
     }
     const comments = await prisma.comment.findMany({
-      where: { postid: postId },
+      where: { postid: postId, parentid: null },
+      include: {
+        User: {
+          select: {
+            username: true,
+            displayname: true,
+            profilepicture: true,
+          },
+        },
+        _count: {
+          select: { other_Comment: true },
+        },
+      },
     });
     if (!comments || !comments.length) {
-      return res.status(404).json({ error: "Comments not found" });
+      return res.status(404).json({ error: "No comments found" });
     }
     return res
       .status(200)
       .json({ message: `${comments.length} Comments found`, comments });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getCommentReplies = async (req: Request, res: Response) => {
+  try {
+    const { commentId } = req.params;
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    const replies = await prisma.comment.findMany({
+      where: { parentid: commentId },
+      include: {
+        User: {
+          select: {
+            username: true,
+            displayname: true,
+            profilepicture: true,
+          },
+        },
+      },
+    });
+    if (!replies || !replies.length) {
+      return res.status(404).json({ error: "No replies found" });
+    }
+    return res
+      .status(200)
+      .json({ message: `${replies.length} replies found`, replies });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -495,14 +571,45 @@ export const createComment = async (req: Request, res: Response) => {
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
+    if (parentId) {
+      const result = await prisma.$transaction(async (tx) => {
+        const comment = await tx.comment.create({
+          data: {
+            content,
+            Comment: { connect: { id: parentId } },
+            Post: { connect: { id: postId } },
+            User: { connect: { id: currentUser.id } },
+          },
+        });
+
+        if (comment.authorid !== currentUser.id) {
+          await tx.notification.create({
+            data: {
+              type: "REPLY",
+              content: `${currentUser.displayname} has replied on your comment "${comment.content}"`,
+              userid: post.authorid,
+              relatedentityid: comment.authorid,
+            },
+          });
+        }
+
+        return comment;
+      });
+      return res
+        .status(201)
+        .json({ message: "Comment created", comment: result });
+    }
     const result = await prisma.$transaction(async (tx) => {
       const comment = await tx.comment.create({
         data: {
           content,
-          ...(parentId && { parentid: parentId }),
           Post: { connect: { id: postId } },
           User: { connect: { id: currentUser.id } },
         },
+      });
+      const commentCount = await tx.post.update({
+        where: { id: postId },
+        data: { commentcount: { increment: 1 } },
       });
 
       if (post.authorid !== currentUser.id) {
@@ -523,6 +630,7 @@ export const createComment = async (req: Request, res: Response) => {
       .status(201)
       .json({ message: "Comment created", comment: result });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -599,6 +707,10 @@ export const deleteComment = async (req: Request, res: Response) => {
     if (!deletedComment) {
       return res.status(500).json({ error: "Failed to delete comment" });
     }
+    await prisma.post.update({
+      where: { id: postId },
+      data: { commentcount: { decrement: 1 } },
+    });
     return res.status(200).json({ message: "Comment deleted successfully" });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
@@ -627,7 +739,6 @@ export const voteToggleComment = async (req: Request, res: Response) => {
     const vote = await prisma.$transaction(async (tx) => {
       const existingVote = await tx.vote.findFirst({
         where: {
-          postid: postId,
           commentid: commentId,
           userid: currentUser?.id,
         },
@@ -718,9 +829,8 @@ export const voteToggleComment = async (req: Request, res: Response) => {
       // --- CASE 3: New vote
       newVote = await tx.vote.create({
         data: {
-          postid: postId,
           commentid: commentId,
-          userid: currentUser?.id!,
+          userid: currentUser.id as string,
           votetype: voteType,
         },
       });

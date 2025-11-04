@@ -21,9 +21,13 @@ import { useDeletePost, usePostVoteToggle } from "@/hooks/postHooks";
 import { DeleteAlert } from "./DeleteAlert";
 import { EditPostModal } from "../../app/(user)/posts/features/EditPostModal";
 import Link from "next/link";
+import { useState } from "react";
+import CommentBox from "@/components/shared/CommentBox";
+import CommentList from "@/components/shared/CommentList";
 
 export function PostCard({ post }: { post: Post }) {
   const { user } = useAuth();
+  const [showComment, setShowComment] = useState(false);
   const postedDate = formatDistanceToNow(new Date(post.createdat as Date));
   const { mutate: handleVoteToggle, isPending: isVoting } = usePostVoteToggle();
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
@@ -156,12 +160,21 @@ export function PostCard({ post }: { post: Post }) {
           <Button
             variant={"secondary"}
             className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
+            onClick={() => setShowComment((prev) => !prev)}
           >
             <MessageSquare size={20} />
             <span>{post.commentcount ?? 0}</span>
           </Button>
         </div>
       </CardFooter>
+      <CardContent>
+        {showComment && (
+          <div className="w-full">
+            <CommentBox postId={post.id} parentId={null} />
+            <CommentList postId={post.id} />
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }

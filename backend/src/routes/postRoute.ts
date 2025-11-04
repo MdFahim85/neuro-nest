@@ -5,6 +5,7 @@ import {
   deleteComment,
   deletePost,
   getAllPosts,
+  getCommentReplies,
   getPostComments,
   getSinglePost,
   savePostToggle,
@@ -49,6 +50,7 @@ router
   );
 router
   .route("/:postId/comments/:commentId")
+  .get(getCommentReplies)
   .put(authMiddleware, authorizeRoles("REGULAR_USER", "STUDENT"), updateComment)
   .delete(
     authMiddleware,

@@ -15,13 +15,12 @@ function Hero() {
         <p className="mt-4 text-gray-200">
           Learn, connect and grow with a community of innovators.
         </p>
-        {!user && (
-          <div className="mt-4">
-            <Button variant={"default"}>
-              <Link href={"/login"}>Get Started</Link>
-            </Button>
-          </div>
-        )}
+
+        <div className="mt-6">
+          <Button variant={"default"}>
+            <Link href={"/posts"}>Get Started</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
