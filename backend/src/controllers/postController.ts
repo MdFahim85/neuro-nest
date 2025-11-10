@@ -89,6 +89,13 @@ export const getAllPosts = async (_req: Request, res: Response) => {
             name: true,
           },
         },
+        Vote: {
+          select: {
+            votetype: true,
+            userid: true,
+            postid: true,
+          },
+        },
       },
     });
 

@@ -94,7 +94,7 @@ function CommentCard({ comment }: { comment: Comment }) {
           )}
         </div>
       </CardFooter>
-      <CardContent>
+      <CardFooter>
         {comment._count.other_Comment > 0 && (
           <Button
             variant={"link"}
@@ -113,7 +113,7 @@ function CommentCard({ comment }: { comment: Comment }) {
             <CommentBox postId={comment.postid} parentId={comment.id} />
           </div>
         )}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }

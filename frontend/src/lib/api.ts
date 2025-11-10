@@ -60,6 +60,15 @@ export const getAllPosts = async () => {
   }
 };
 
+export const getSavedPosts = async () => {
+  try {
+    const response = await apiUrl.get("users/me/saved-posts");
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
 export const editPost = async (data: {
   postId: string;
   title?: string;
@@ -78,6 +87,15 @@ export const editPost = async (data: {
 export const deletePost = async (postId: string) => {
   try {
     const response = await apiUrl.delete(`/posts/${postId}`);
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
+export const savePost = async (postId: string) => {
+  try {
+    const response = await apiUrl.post(`/posts/${postId}/save`);
     return response.data;
   } catch (error) {
     return Promise.reject(error);

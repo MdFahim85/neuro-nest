@@ -8,7 +8,9 @@ import {
   getAllComments,
   getAllPosts,
   getAllReplies,
+  getSavedPosts,
   postVoteToggle,
+  savePost,
   updateComment,
 } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +37,15 @@ export function useGetPosts() {
   return query;
 }
 
+export function useGetSavedPosts() {
+  const query = useQuery({
+    queryKey: ["savedPosts"],
+    queryFn: getSavedPosts,
+    retry: 0,
+  });
+  return query;
+}
+
 export function useEditPost() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -55,6 +66,19 @@ export function useDeletePost() {
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+  });
+
+  return mutation;
+}
+
+export function useSavePost() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: savePost,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["savedPosts"] });
     },
   });
 

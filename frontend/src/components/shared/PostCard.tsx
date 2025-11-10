@@ -1,11 +1,17 @@
-import { Post } from "@/types";
+import { Post, SavedPost, Vote } from "@/types";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { ArrowUp, ArrowDown, MessageSquare, Ellipsis } from "lucide-react";
+import {
+  ArrowUp,
+  ArrowDown,
+  MessageSquare,
+  Ellipsis,
+  Bookmark,
+} from "lucide-react";
 import Image from "next/image";
 import UserAvatar from "./UserAvatar";
 import { formatDistanceToNow } from "date-fns";
@@ -17,7 +23,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDeletePost, usePostVoteToggle } from "@/hooks/postHooks";
+import {
+  useDeletePost,
+  useGetSavedPosts,
+  usePostVoteToggle,
+  useSavePost,
+} from "@/hooks/postHooks";
 import { DeleteAlert } from "./DeleteAlert";
 import { EditPostModal } from "../../app/(user)/posts/features/EditPostModal";
 import Link from "next/link";
@@ -29,12 +40,31 @@ export function PostCard({ post }: { post: Post }) {
   const { user } = useAuth();
   const [showComment, setShowComment] = useState(false);
   const postedDate = formatDistanceToNow(new Date(post.createdat as Date));
+  const { data: savedPosts, isPending: isFetchingSavedPosts } =
+    useGetSavedPosts();
   const { mutate: handleVoteToggle, isPending: isVoting } = usePostVoteToggle();
+  const { mutate: savePostToggle, isPending: isSaving } = useSavePost();
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
 
-  const handleDeletePost = () => {
-    deletePost(post.id);
-  };
+  const isSaved =
+    !isFetchingSavedPosts &&
+    !!savedPosts?.userSavedPosts?.some(
+      (savePost: SavedPost) => savePost.postid === post.id
+    );
+
+  const isUpVote = post.Vote.some(
+    (votepost: Vote) =>
+      votepost.userid === post.authorid &&
+      votepost.postid === post.id &&
+      votepost.votetype === "UPVOTE"
+  );
+
+  const isDownVote = post.Vote.some(
+    (votepost: Vote) =>
+      votepost.userid === post.authorid &&
+      votepost.postid === post.id &&
+      votepost.votetype === "DOWNVOTE"
+  );
 
   return (
     <Card className="w-full hover:shadow-lg hover:scale-101 transition-all bg-neutral-200 dark:bg-neutral-900">
@@ -65,37 +95,52 @@ export function PostCard({ post }: { post: Post }) {
               {postedDate} ago
             </div>
           </div>
-          {/* Post edit/delete dropdown */}
-          {post.authorid === user?.id && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-lg"
-                  className="hover:text-emerald-500 transition-colors"
-                >
-                  <Ellipsis size={20} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                  }}
-                >
-                  <EditPostModal post={post} />
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={isDeleting}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                  }}
-                >
-                  <DeleteAlert onClick={handleDeletePost} dbData={"post"} />
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <div className="flex gap-4 items-center">
+            {/* Post edit/delete dropdown */}
+            {post.authorid === user?.id && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-lg"
+                    className="hover:text-emerald-500 transition-colors"
+                  >
+                    <Ellipsis size={20} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
+                    <EditPostModal post={post} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={isDeleting}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
+                    <DeleteAlert
+                      onClick={() => deletePost(post.id)}
+                      dbData={"post"}
+                    />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {user && (
+              <Button
+                variant={"link"}
+                onClick={() => savePostToggle(post.id)}
+                size={"lg"}
+                disabled={isSaving}
+              >
+                <Bookmark fill={isSaved ? "white" : "none"} />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="py-2">
@@ -134,7 +179,9 @@ export function PostCard({ post }: { post: Post }) {
           {/* Upvote */}
           <Button
             variant={"secondary"}
-            className={`flex items-center gap-1 hover:text-emerald-500 transition-colors`}
+            className={`flex items-center gap-1 ${
+              isUpVote ? "text-emerald-500" : ""
+            }  hover:text-emerald-500 transition-colors`}
             onClick={() => {
               handleVoteToggle({ postId: post.id, voteType: "UPVOTE" });
             }}
@@ -146,7 +193,9 @@ export function PostCard({ post }: { post: Post }) {
           {/* Downvote */}
           <Button
             variant={"secondary"}
-            className={`flex items-center gap-1 hover:text-red-500 transition-colors`}
+            className={`flex items-center gap-1 ${
+              isDownVote ? "text-red-500" : ""
+            } hover:text-red-500 transition-colors`}
             onClick={() => {
               handleVoteToggle({ postId: post.id, voteType: "DOWNVOTE" });
             }}
@@ -167,14 +216,14 @@ export function PostCard({ post }: { post: Post }) {
           </Button>
         </div>
       </CardFooter>
-      <CardContent>
+      <CardFooter>
         {showComment && (
           <div className="w-full">
             <CommentBox postId={post.id} parentId={null} />
             <CommentList postId={post.id} />
           </div>
         )}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }
