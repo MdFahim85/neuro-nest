@@ -1,5 +1,5 @@
 import { Comment } from "@/types";
-import { Edit, Save } from "lucide-react";
+import { Edit, Save, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -40,6 +40,13 @@ export default function EditComment({ comment }: { comment: Comment }) {
             disabled={!content || isUpdatingComment}
           >
             {<Save />}
+          </Button>
+          <Button
+            className="hover:text-red-500"
+            variant={"ghost"}
+            onClick={() => setEditComment(false)}
+          >
+            {<X />}
           </Button>
         </div>
       ) : (
