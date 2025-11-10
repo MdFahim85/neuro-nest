@@ -2,12 +2,14 @@ import {
   commentOnPost,
   commentVoteToggle,
   createPost,
+  deleteComment,
   deletePost,
   editPost,
   getAllComments,
   getAllPosts,
   getAllReplies,
   postVoteToggle,
+  updateComment,
 } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -89,6 +91,7 @@ export function useGetComments(postId: string) {
   const query = useQuery({
     queryKey: ["comments", postId],
     queryFn: getAllComments,
+    retry: 0,
   });
   return query;
 }
@@ -97,8 +100,42 @@ export function useGetReplies(postId: string, commentId: string) {
   const query = useQuery({
     queryKey: ["comments", postId, commentId],
     queryFn: getAllReplies,
+    retry: 0,
   });
   return query;
+}
+
+export function useCommentUpdate() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: updateComment,
+    onSuccess: () => {
+      ["comments", "posts"].forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      );
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  return mutation;
+}
+
+export function useCommentDelete() {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: deleteComment,
+    onSuccess: () => {
+      ["comments", "posts"].forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      );
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  return mutation;
 }
 
 export function useCommentVoteToggle() {
@@ -107,6 +144,9 @@ export function useCommentVoteToggle() {
     mutationFn: commentVoteToggle,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments"] });
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

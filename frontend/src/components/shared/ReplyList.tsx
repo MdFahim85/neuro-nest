@@ -1,6 +1,7 @@
 import { Comment } from "@/types";
 import { Fragment } from "react/jsx-runtime";
 import { useGetReplies } from "@/hooks/postHooks";
+import ReplyCard from "./ReplyCard";
 
 export default function ReplyList({
   commentId,
@@ -22,7 +23,7 @@ export default function ReplyList({
         {data.replies.map((comment: Comment) => {
           return (
             <Fragment key={comment.id}>
-              <div>{comment.content}</div>
+              <ReplyCard comment={comment} />
             </Fragment>
           );
         })}

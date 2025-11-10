@@ -7,20 +7,21 @@ import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { useCommentDelete, useCommentVoteToggle } from "@/hooks/postHooks";
 import { useState } from "react";
 import CommentBox from "./CommentBox";
-import ReplyList from "./ReplyList";
 import { useAuth } from "@/context/auth-client";
 import EditComment from "./EditComment";
 
-function CommentCard({ comment }: { comment: Comment }) {
+function ReplyCard({ comment }: { comment: Comment }) {
   const { user } = useAuth();
   const [showReplyBox, setShowReplyBox] = useState(false);
-  const [showReplies, setShowReplies] = useState(false);
-
   const commentedDate = formatDistanceToNow(
     new Date(comment.createdat as Date)
   );
-  const { mutate: handleVoteToggle, isPending: isVoting } =
-    useCommentVoteToggle();
+  const {
+    mutate: handleVoteToggle,
+    isPending: isVoting,
+    isError,
+    error,
+  } = useCommentVoteToggle();
 
   const { mutate: handleCommentDelete, isPending: isDeletingComment } =
     useCommentDelete();
@@ -52,6 +53,7 @@ function CommentCard({ comment }: { comment: Comment }) {
           >
             <ArrowUp size={20} />
             <span>{comment.upvotecount ?? 0}</span>
+            {isError && <div>{error.message}</div>}
           </Button>
           {/* Downvote */}
           <Button
@@ -95,22 +97,9 @@ function CommentCard({ comment }: { comment: Comment }) {
         </div>
       </CardFooter>
       <CardContent>
-        {comment._count.other_Comment > 0 && (
-          <Button
-            variant={"link"}
-            onClick={() => setShowReplies((prev) => !prev)}
-          >
-            view {comment._count.other_Comment}{" "}
-            {comment._count.other_Comment > 1 ? "replies" : "reply"}
-          </Button>
-        )}
-
-        {showReplies && (
-          <ReplyList commentId={comment.id} postId={comment.postid} />
-        )}
         {showReplyBox && (
           <div className="w-full">
-            <CommentBox postId={comment.postid} parentId={comment.id} />
+            <CommentBox postId={comment.postid} parentId={comment.parentid} />
           </div>
         )}
       </CardContent>
@@ -118,4 +107,4 @@ function CommentCard({ comment }: { comment: Comment }) {
   );
 }
 
-export default CommentCard;
+export default ReplyCard;

@@ -61,11 +61,11 @@ export const getAllPosts = async () => {
 };
 
 export const editPost = async (data: {
-  postId: String;
-  title?: String;
-  content?: String;
-  mediaUrls?: String[];
-  hashTags?: String[];
+  postId: string;
+  title?: string;
+  content?: string;
+  mediaUrls?: string[];
+  hashTags?: string[];
 }) => {
   try {
     const response = await apiUrl.put(`/posts/${data.postId}/`, data);
@@ -75,7 +75,7 @@ export const editPost = async (data: {
   }
 };
 
-export const deletePost = async (postId: String) => {
+export const deletePost = async (postId: string) => {
   try {
     const response = await apiUrl.delete(`/posts/${postId}`);
     return response.data;
@@ -134,6 +134,36 @@ export const getAllReplies = async ({
     return response.data;
   } catch (error) {
     return Promise.reject(error);
+  }
+};
+
+export const updateComment = async (data: {
+  postId: string;
+  commentId: string;
+  content: string;
+}) => {
+  try {
+    const response = await apiUrl.put(
+      `/posts/${data.postId}/comments/${data.commentId}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    Promise.reject(error);
+  }
+};
+
+export const deleteComment = async (data: {
+  postId: string;
+  commentId: string;
+}) => {
+  try {
+    const response = await apiUrl.delete(
+      `/posts/${data.postId}/comments/${data.commentId}`
+    );
+    return response.data;
+  } catch (error) {
+    Promise.reject(error);
   }
 };
 

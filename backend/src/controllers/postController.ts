@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
-import { error } from "console";
 
 // Creating post
 export const createPost = async (req: Request, res: Response) => {
@@ -364,37 +363,6 @@ export const voteToggle = async (req: Request, res: Response) => {
   }
 };
 
-// export const hasVote = async (req: Request, res: Response) => {
-//   try {
-//     const userId = req.user?.id;
-//     const { postId } = req.params;
-//     const user = await prisma.user.findUnique({
-//       where: { id: userId },
-//       select: { isdeleted: false, isbanned: false },
-//     });
-//     const post = await prisma.post.findUnique({
-//       where: { id: postId },
-//       select: { isdeleted: false },
-//     });
-//     if (!user || !post) {
-//       return res.status(404).json({ error: "Resource not found" });
-//     }
-//     const vote = await prisma.vote.findUnique({
-//       where: {
-//         userid_postid: {
-//           userid: userId as string,
-//           postid: postId,
-//         },
-//       },
-//     });
-//     if (!vote){
-//       return res.json()
-//     }
-//   } catch (error) {
-//     return res.status(500).json({ error: "Internal server error" });
-//   }
-// };
-
 // Save post toggle
 
 export const savePostToggle = async (req: Request, res: Response) => {
@@ -499,6 +467,7 @@ export const getPostComments = async (req: Request, res: Response) => {
     }
     const comments = await prisma.comment.findMany({
       where: { postid: postId, parentid: null },
+      orderBy: { createdat: "desc" },
       include: {
         User: {
           select: {
@@ -534,6 +503,7 @@ export const getCommentReplies = async (req: Request, res: Response) => {
     }
     const replies = await prisma.comment.findMany({
       where: { parentid: commentId },
+      orderBy: { createdat: "desc" },
       include: {
         User: {
           select: {
@@ -706,6 +676,9 @@ export const deleteComment = async (req: Request, res: Response) => {
     });
     if (!deletedComment) {
       return res.status(500).json({ error: "Failed to delete comment" });
+    }
+    if (deletedComment.parentid) {
+      return res.status(200).json({ message: "Comment deleted successfully" });
     }
     await prisma.post.update({
       where: { id: postId },
