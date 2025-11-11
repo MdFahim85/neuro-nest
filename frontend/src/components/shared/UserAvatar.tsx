@@ -4,7 +4,7 @@ import { User } from "@/types";
 
 function UserAvatar({ user }: { user: User }) {
   return (
-    <Link href={"/profile"}>
+    <Link href={`/users/${user.id}`}>
       <Avatar>
         <AvatarImage
           src={

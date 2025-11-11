@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
   if (accessToken && (pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/posts", request.url));
   }
-  if (!accessToken && pathname.startsWith("/profile")) {
+  if (!accessToken && pathname.startsWith("/users/me")) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
@@ -18,5 +18,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/register", "/profile", "/posts"],
+  matcher: ["/login", "/register", "/users/me", "/posts"],
 };

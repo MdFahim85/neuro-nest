@@ -19,6 +19,7 @@ export type Post = PrismaPost & {
 };
 export type Comment = PrismaComment & {
   User: PrismaUser;
+  Vote: PrismaVote[];
   _count: {
     other_Comment: number;
   };

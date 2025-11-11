@@ -60,6 +60,20 @@ export const getAllPosts = async () => {
   }
 };
 
+export const getSinglePost = async ({
+  queryKey,
+}: {
+  queryKey: [string, string];
+}) => {
+  const [, postId] = queryKey;
+  try {
+    const response = await apiUrl.get(`/posts/${postId}`);
+    return response.data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
 export const getSavedPosts = async () => {
   try {
     const response = await apiUrl.get("users/me/saved-posts");
@@ -198,5 +212,30 @@ export const commentVoteToggle = async (data: {
     return response.data;
   } catch (error) {
     return Promise.reject(error);
+  }
+};
+
+// User API
+
+export const getMyDetails = async () => {
+  try {
+    const response = await apiUrl.get("/users/me");
+    return response.data;
+  } catch (error) {
+    Promise.reject(error);
+  }
+};
+
+export const getUserDetails = async ({
+  queryKey,
+}: {
+  queryKey: [string, string];
+}) => {
+  const [, userId] = queryKey;
+  try {
+    const response = await apiUrl.get(`/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    Promise.reject(error);
   }
 };

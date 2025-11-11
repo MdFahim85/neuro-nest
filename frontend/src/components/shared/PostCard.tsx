@@ -54,14 +54,14 @@ export function PostCard({ post }: { post: Post }) {
 
   const isUpVote = post.Vote.some(
     (votepost: Vote) =>
-      votepost.userid === post.authorid &&
+      votepost.userid === user?.id &&
       votepost.postid === post.id &&
       votepost.votetype === "UPVOTE"
   );
 
   const isDownVote = post.Vote.some(
     (votepost: Vote) =>
-      votepost.userid === post.authorid &&
+      votepost.userid === user?.id &&
       votepost.postid === post.id &&
       votepost.votetype === "DOWNVOTE"
   );
@@ -132,48 +132,53 @@ export function PostCard({ post }: { post: Post }) {
             )}
             {user && (
               <Button
-                variant={"link"}
+                variant={"ghost"}
                 onClick={() => savePostToggle(post.id)}
                 size={"lg"}
                 disabled={isSaving}
               >
-                <Bookmark fill={isSaved ? "white" : "none"} />
+                <Bookmark
+                  fill={isSaved ? "white" : "none"}
+                  stroke={isSaved ? "none" : "white"}
+                />
               </Button>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="py-2">
-        <h3 className="text-xl font-semibold py-4">{post.title}</h3>
-        <p className="text-gray-700">{post.content}</p>
+      <Link href={`/posts/${post.id}`}>
+        <CardContent className="py-2">
+          <h3 className="text-xl font-semibold py-4">{post.title}</h3>
+          <p className="text-gray-700">{post.content}</p>
 
-        {post.mediaurls.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {post.mediaurls.length &&
-              post.mediaurls.map((url, index) => (
-                <Image
+          {post.mediaurls.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {post.mediaurls.length &&
+                post.mediaurls.map((url, index) => (
+                  <Image
+                    key={index}
+                    src={url}
+                    alt={`Media ${index + 1}`}
+                    className="w-full h-48 object-cover rounded"
+                  />
+                ))}
+            </div>
+          )}
+
+          {post.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {post.hashtags.map((tag, index) => (
+                <span
                   key={index}
-                  src={url}
-                  alt={`Media ${index + 1}`}
-                  className="w-full h-48 object-cover rounded"
-                />
+                  className="text-blue-400 text-sm hover:underline cursor-pointer"
+                >
+                  #{tag}
+                </span>
               ))}
-          </div>
-        )}
-
-        {post.hashtags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {post.hashtags.map((tag, index) => (
-              <span
-                key={index}
-                className="text-blue-400 text-sm hover:underline cursor-pointer"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </CardContent>
+            </div>
+          )}
+        </CardContent>
+      </Link>
       <CardFooter>
         <div className="flex items-center gap-6 text-gray-600">
           {/* Upvote */}
@@ -185,7 +190,7 @@ export function PostCard({ post }: { post: Post }) {
             onClick={() => {
               handleVoteToggle({ postId: post.id, voteType: "UPVOTE" });
             }}
-            disabled={isVoting}
+            disabled={isVoting || !user}
           >
             <ArrowUp size={20} />
             <span>{post.upvotecount ?? 0}</span>
@@ -199,7 +204,7 @@ export function PostCard({ post }: { post: Post }) {
             onClick={() => {
               handleVoteToggle({ postId: post.id, voteType: "DOWNVOTE" });
             }}
-            disabled={isVoting}
+            disabled={isVoting || !user}
           >
             <ArrowDown size={20} />
             <span>{post.downvotecount ?? 0}</span>

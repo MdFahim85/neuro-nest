@@ -1,4 +1,4 @@
-import { Comment } from "@/types";
+import { Comment, Vote } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
 import UserAvatar from "./UserAvatar";
 import { formatDistanceToNow } from "date-fns";
@@ -25,6 +25,20 @@ function CommentCard({ comment }: { comment: Comment }) {
   const { mutate: handleCommentDelete, isPending: isDeletingComment } =
     useCommentDelete();
 
+  const isUpVote = comment.Vote.some(
+    (votepost: Vote) =>
+      votepost.userid === user?.id &&
+      votepost.commentid === comment.id &&
+      votepost.votetype === "UPVOTE"
+  );
+
+  const isDownVote = comment.Vote.some(
+    (votepost: Vote) =>
+      votepost.userid === user?.id &&
+      votepost.commentid === comment.id &&
+      votepost.votetype === "DOWNVOTE"
+  );
+
   return (
     <Card className="my-4 border-0">
       <CardHeader className="flex gap-4 items-center">
@@ -40,7 +54,9 @@ function CommentCard({ comment }: { comment: Comment }) {
           {/* Upvote */}
           <Button
             variant={"ghost"}
-            className={`flex items-center gap-1 hover:text-emerald-500 transition-colors`}
+            className={`flex items-center gap-1 ${
+              isUpVote ? "text-emerald-500" : ""
+            } hover:text-emerald-500 transition-colors`}
             onClick={() => {
               handleVoteToggle({
                 commentId: comment.id,
@@ -48,7 +64,7 @@ function CommentCard({ comment }: { comment: Comment }) {
                 voteType: "UPVOTE",
               });
             }}
-            disabled={isVoting}
+            disabled={isVoting || !user}
           >
             <ArrowUp size={20} />
             <span>{comment.upvotecount ?? 0}</span>
@@ -56,7 +72,9 @@ function CommentCard({ comment }: { comment: Comment }) {
           {/* Downvote */}
           <Button
             variant={"ghost"}
-            className={`flex items-center gap-1 hover:text-red-500 transition-colors`}
+            className={`flex items-center gap-1 ${
+              isDownVote ? "text-red-500" : ""
+            } hover:text-red-500 transition-colors`}
             onClick={() => {
               handleVoteToggle({
                 commentId: comment.id,
@@ -64,7 +82,7 @@ function CommentCard({ comment }: { comment: Comment }) {
                 voteType: "DOWNVOTE",
               });
             }}
-            disabled={isVoting}
+            disabled={isVoting || !user}
           >
             <ArrowDown size={20} />
             <span>{comment.downvotecount ?? 0}</span>
@@ -75,6 +93,7 @@ function CommentCard({ comment }: { comment: Comment }) {
             variant={"link"}
             className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
             onClick={() => setShowReplyBox((prev) => !prev)}
+            disabled={!user}
           >
             reply
           </Button>
@@ -95,24 +114,26 @@ function CommentCard({ comment }: { comment: Comment }) {
         </div>
       </CardFooter>
       <CardFooter>
-        {comment._count.other_Comment > 0 && (
-          <Button
-            variant={"link"}
-            onClick={() => setShowReplies((prev) => !prev)}
-          >
-            view {comment._count.other_Comment}{" "}
-            {comment._count.other_Comment > 1 ? "replies" : "reply"}
-          </Button>
-        )}
+        <div>
+          {comment._count.other_Comment > 0 && (
+            <Button
+              variant={"link"}
+              onClick={() => setShowReplies((prev) => !prev)}
+            >
+              view {comment._count.other_Comment}{" "}
+              {comment._count.other_Comment > 1 ? "replies" : "reply"}
+            </Button>
+          )}
 
-        {showReplies && (
-          <ReplyList commentId={comment.id} postId={comment.postid} />
-        )}
-        {showReplyBox && (
-          <div className="w-full">
-            <CommentBox postId={comment.postid} parentId={comment.id} />
-          </div>
-        )}
+          {showReplies && (
+            <ReplyList commentId={comment.id} postId={comment.postid} />
+          )}
+          {showReplyBox && (
+            <div className="w-full">
+              <CommentBox postId={comment.postid} parentId={comment.id} />
+            </div>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

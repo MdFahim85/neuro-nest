@@ -9,6 +9,7 @@ import {
   getAllPosts,
   getAllReplies,
   getSavedPosts,
+  getSinglePost,
   postVoteToggle,
   savePost,
   updateComment,
@@ -46,13 +47,23 @@ export function useGetSavedPosts() {
   return query;
 }
 
+export function useGetSinglePost(postId: string) {
+  const query = useQuery({
+    queryKey: ["post", postId],
+    queryFn: getSinglePost,
+  });
+  return query;
+}
+
 export function useEditPost() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: editPost,
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      ["posts", "post"].forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      );
     },
   });
 
@@ -65,7 +76,9 @@ export function useDeletePost() {
     mutationFn: deletePost,
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      ["posts", "post"].forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      );
     },
   });
 
@@ -76,9 +89,11 @@ export function useSavePost() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: savePost,
-    onSuccess: (data) => {
-      toast.success(data.message);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["savedPosts"] });
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -90,7 +105,9 @@ export function usePostVoteToggle() {
   const mutation = useMutation({
     mutationFn: postVoteToggle,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      ["posts", "post"].forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      );
     },
   });
 
@@ -102,7 +119,7 @@ export function useCommentOnPost() {
   const mutation = useMutation({
     mutationFn: commentOnPost,
     onSuccess: () => {
-      ["comments", "posts"].forEach((key) =>
+      ["comments", "posts", "post"].forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] })
       );
     },
@@ -134,7 +151,7 @@ export function useCommentUpdate() {
   const mutation = useMutation({
     mutationFn: updateComment,
     onSuccess: () => {
-      ["comments", "posts"].forEach((key) =>
+      ["comments", "posts", "post"].forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] })
       );
     },
@@ -150,7 +167,7 @@ export function useCommentDelete() {
   const mutation = useMutation({
     mutationFn: deleteComment,
     onSuccess: () => {
-      ["comments", "posts"].forEach((key) =>
+      ["comments", "posts", "post"].forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] })
       );
     },

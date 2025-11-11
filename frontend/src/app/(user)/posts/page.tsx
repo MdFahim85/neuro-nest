@@ -1,7 +1,7 @@
 import PostBox from "./features/PostBox";
 import PostList from "./features/PostList";
 
-function Feed() {
+function Posts() {
   return (
     <div className="w-full grid grid-cols-12 gap-4 my-4">
       <div className="max-h-[60vh] md:col-span-4 col-span-12 p-4 border border-emerald-600 dark:border-emerald-300 rounded-md sticky top-22">
@@ -15,4 +15,4 @@ function Feed() {
   );
 }
 
-export default Feed;
+export default Posts;

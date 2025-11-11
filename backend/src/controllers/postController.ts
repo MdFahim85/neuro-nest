@@ -79,6 +79,7 @@ export const getAllPosts = async (_req: Request, res: Response) => {
       include: {
         User: {
           select: {
+            id: true,
             username: true,
             displayname: true,
             profilepicture: true,
@@ -114,8 +115,32 @@ export const getAllPosts = async (_req: Request, res: Response) => {
 export const getSinglePost = async (req: Request, res: Response) => {
   try {
     const id = req.params.postId;
-    const post = await prisma.post.findUnique({ where: { id } });
-    if (!post || post.isdeleted) {
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        User: {
+          select: {
+            id: true,
+            username: true,
+            displayname: true,
+            profilepicture: true,
+          },
+        },
+        SubCommunity: {
+          select: {
+            name: true,
+          },
+        },
+        Vote: {
+          select: {
+            votetype: true,
+            userid: true,
+            postid: true,
+          },
+        },
+      },
+    });
+    if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
     return res.status(200).json({ message: "Post found", post });
@@ -483,6 +508,13 @@ export const getPostComments = async (req: Request, res: Response) => {
             profilepicture: true,
           },
         },
+        Vote: {
+          select: {
+            votetype: true,
+            userid: true,
+            commentid: true,
+          },
+        },
         _count: {
           select: { other_Comment: true },
         },
@@ -517,6 +549,13 @@ export const getCommentReplies = async (req: Request, res: Response) => {
             username: true,
             displayname: true,
             profilepicture: true,
+          },
+        },
+        Vote: {
+          select: {
+            votetype: true,
+            userid: true,
+            commentid: true,
           },
         },
       },

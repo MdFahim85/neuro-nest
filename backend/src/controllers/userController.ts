@@ -1,13 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../config/prisma";
 import { supabase } from "../config/supabaseClient";
-import { error } from "console";
 
 // Get personal details
 export const getMyDetails = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    return res.status(200).json({ message: user });
+    const userDetails = await prisma.user.findUnique({
+      where: { id: user?.id },
+    });
+    if (!userDetails) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.status(200).json({ message: "User details", userDetails });
   } catch (err) {
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -17,7 +22,7 @@ export const getMyDetails = async (req: Request, res: Response) => {
 export const getUserDetails = async (req: Request, res: Response) => {
   try {
     const id = req.params.userId;
-    const user = await prisma.user.findUnique({
+    const userDetails = await prisma.user.findUnique({
       where: { id: id },
       omit: {
         role: true,
@@ -28,7 +33,10 @@ export const getUserDetails = async (req: Request, res: Response) => {
         updatedat: true,
       },
     });
-    return res.status(200).json(user);
+    if (!userDetails) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.status(200).json(userDetails);
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
